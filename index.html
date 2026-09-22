@@ -381,14 +381,14 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">Enter a code from another device</div>
-                <div class="card-subtitle">Scan their QR code or paste their connection data.</div>
+                <div class="card-title">Connect to another device</div>
+                <div class="card-subtitle">Scan their QR code using camera or paste connection data.</div>
               </div>
               <i class="ph-scan" aria-hidden="true" style="font-size:24px;color:var(--accent-secondary);"></i>
             </div>
-            <button class="btn-secondary btn" id="switch-to-enter-standalone" aria-label="Enter pairing code from another device">
-              <i class="ph-keyboard btn-icon" aria-hidden="true"></i>
-              Enter Connection Data
+            <button class="btn-secondary btn" id="switch-to-enter-standalone" aria-label="Scan QR code or paste connection data from another device">
+              <i class="ph-camera btn-icon" aria-hidden="true"></i>
+              Scan QR Code / Paste Data
             </button>
           </div>
 
@@ -716,9 +716,15 @@
       <div id="pairing-content" hidden>
 
         <!-- Security note -->
-        <div class="banner banner--info" style="margin-bottom:1rem;">
+        <div class="banner banner--info" style="margin-bottom:0.75rem;">
           <span class="banner-icon"><i class="ph-info" aria-hidden="true"></i></span>
-          <span class="banner-text">Pairing codes expire in <strong id="pairing-timer">10:00</strong>. They are only used for setup — clipboard data travels directly between devices.</span>
+          <span class="banner-text">Pairing codes expire in <strong id="pairing-timer">10:00</strong>.</span>
+        </div>
+
+        <div style="text-align:center;margin-bottom:1rem;">
+          <button class="btn btn-ghost btn--sm" id="switch-to-enter-btn" aria-label="Switch to scan QR or paste data">
+            <i class="ph-scan btn-icon" aria-hidden="true"></i> Need to scan another device's QR code? Click here
+          </button>
         </div>
 
         <!-- Tab selector: QR / Code -->
