@@ -24,16 +24,24 @@ export const QR = {
     container.innerHTML = '';
 
     try {
+      const correctLevel = window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.L : 1;
       new window.QRCode(container, {
         text,
-        width:          opts.width       || 180,
-        height:         opts.height      || 180,
+        width:          opts.width       || 200,
+        height:         opts.height      || 200,
         colorDark:      opts.colorDark   || '#180E12',
         colorLight:     opts.colorLight  || '#E4DCCB',
-        correctLevel:   window.QRCode.CorrectLevel.M
+        correctLevel:   correctLevel,
+        quietZone:      10,
+        quietZoneColor: opts.colorLight  || '#E4DCCB'
       });
     } catch (e) {
-      container.innerHTML = '<p style="color:#940417;font-size:13px;text-align:center">QR generation failed</p>';
+      container.innerHTML = `
+        <div style="text-align:center;padding:1rem;">
+          <p style="color:#B46595;font-size:13px;margin-bottom:0.5rem;">Connection data ready.</p>
+          <p style="font-size:12px;color:var(--text-secondary);">Use the <strong>Copy pairing data</strong> button below to connect.</p>
+        </div>
+      `;
       console.error('[QR] Generation error:', e);
     }
   },

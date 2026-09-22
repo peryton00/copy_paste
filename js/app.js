@@ -79,6 +79,10 @@ async function bootstrap() {
     return;
   }
 
+  // Returning user: hide first run screen and display app
+  document.getElementById('first-run-screen')?.setAttribute('hidden', '');
+  document.getElementById('app-shell')?.removeAttribute('hidden');
+
   appState.device = savedDevice;
   await initApp();
 }
@@ -122,6 +126,10 @@ function showFirstRun() {
 }
 
 async function initApp() {
+  // Ensure screen visibility
+  document.getElementById('first-run-screen')?.setAttribute('hidden', '');
+  document.getElementById('app-shell')?.removeAttribute('hidden');
+
   // Init connection manager
   connManager.init({
     localDeviceId:  appState.device.deviceId,
@@ -1127,22 +1135,8 @@ function refreshQRDisplay() {
   const qrContainer = document.getElementById('qr-container');
   if (!qrContainer || !appState.pairing.offerPayload) return;
 
-  // Check payload size — if > 2KB, QR may be unreliable; prefer copy/paste
-  const size = Utils.getByteLength(appState.pairing.offerPayload);
-  if (size > 2800) {
-    qrContainer.innerHTML = `
-      <div style="text-align:center;padding:1rem;">
-        <i class="ph-warning" style="font-size:2rem;color:#B46595;display:block;margin-bottom:0.5rem;"></i>
-        <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5">
-          Connection data is too large for a QR code.<br>Use the copy/paste method below.
-        </p>
-      </div>
-    `;
-    return;
-  }
-
   QR.generate(qrContainer, appState.pairing.offerPayload, {
-    width: 180, height: 180,
+    width: 200, height: 200,
     colorDark: '#180E12', colorLight: '#E4DCCB'
   });
 }
