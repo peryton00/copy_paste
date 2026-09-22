@@ -721,9 +721,14 @@
           <span class="banner-text">Pairing codes expire in <strong id="pairing-timer">10:00</strong>.</span>
         </div>
 
-        <div style="text-align:center;margin-bottom:1rem;">
-          <button class="btn btn-ghost btn--sm" id="switch-to-enter-btn" aria-label="Switch to scan QR or paste data">
-            <i class="ph-scan btn-icon" aria-hidden="true"></i> Need to scan another device's QR code? Click here
+        <!-- Direct camera / scanner switch -->
+        <div style="background:var(--bg-elevated);padding:0.75rem 1rem;border-radius:var(--radius-lg);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border-accent);gap:0.75rem;flex-wrap:wrap;">
+          <div>
+            <strong style="color:var(--text-primary);font-size:0.875rem;display:block;">On another device?</strong>
+            <span style="font-size:0.75rem;color:var(--text-secondary);">Use your camera to scan this screen</span>
+          </div>
+          <button class="btn btn-primary btn--sm" id="switch-to-enter-btn" aria-label="Open camera to scan QR code">
+            <i class="ph-camera btn-icon" aria-hidden="true"></i> Open Camera Scanner
           </button>
         </div>
 

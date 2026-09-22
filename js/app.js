@@ -1152,18 +1152,21 @@ function refreshQRDisplay() {
 // ============================================================
 
 function setupPairingEnterFlow() {
-  // Switch to "Enter Code" mode (from pairing modal)
-  document.getElementById('switch-to-enter-btn')?.addEventListener('click', () => {
+  // Helper to open scanner modal and auto-start camera
+  const openScannerModal = () => {
     Modal.close('pairing-modal');
     Modal.open('enter-code-modal');
-  });
+    document.getElementById('tab-scan')?.click();
+    setTimeout(() => startQRScanner(), 150);
+  };
+
+  // Switch to "Enter Code / Scan" mode (from pairing modal)
+  document.getElementById('switch-to-enter-btn')?.addEventListener('click', openScannerModal);
 
   // Enter code button (standalone pair view)
-  document.getElementById('switch-to-enter-standalone')?.addEventListener('click', () => {
-    Modal.open('enter-code-modal');
-  });
+  document.getElementById('switch-to-enter-standalone')?.addEventListener('click', openScannerModal);
 
-  // Scan QR
+  // Scan QR button inside tab
   document.getElementById('scan-qr-btn')?.addEventListener('click', () => {
     startQRScanner();
   });
@@ -1288,11 +1291,10 @@ async function startQRScanner() {
       if (stopBtn)  stopBtn.setAttribute('hidden', '');
       if (startBtn) startBtn.removeAttribute('hidden');
 
-      // Switch to paste panel and auto-fill
-      document.getElementById('tab-paste')?.click();
+      // Auto-fill input field with scanned data
       const textarea = document.getElementById('paste-packet-input');
       if (textarea) textarea.value = data;
-      Toast.info('QR code scanned. Submit to connect.');
+      Toast.success('QR Code scanned successfully! Connecting...');
       await submitPacket();
     },
     (err) => {
