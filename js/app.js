@@ -1165,12 +1165,14 @@ function setupPairingEnterFlow() {
     startQRScanner();
   });
 
-  // Stop scanner
-  document.getElementById('stop-scan-btn')?.addEventListener('click', () => {
+  const resetScannerUI = () => {
     QR.stopScanner();
     document.getElementById('stop-scan-btn')?.setAttribute('hidden', '');
-    document.getElementById('scan-qr-btn')?.removeAttribute('hidden');
-    // Reset video container
+    const startBtn = document.getElementById('scan-qr-btn');
+    if (startBtn) {
+      startBtn.removeAttribute('hidden');
+      startBtn.disabled = false;
+    }
     const container = document.getElementById('scanner-video-container');
     if (container) {
       container.innerHTML = `
@@ -1180,7 +1182,10 @@ function setupPairingEnterFlow() {
         </div>
       `;
     }
-  });
+  };
+
+  // Stop scanner
+  document.getElementById('stop-scan-btn')?.addEventListener('click', resetScannerUI);
 
   // Submit code (manual entry)
   document.getElementById('enter-code-submit-btn')?.addEventListener('click', () => {
@@ -1194,7 +1199,7 @@ function setupPairingEnterFlow() {
 
   // Close enter-code modal handlers
   const handleCloseEnterModal = () => {
-    QR.stopScanner();
+    resetScannerUI();
     Modal.close('enter-code-modal');
   };
   document.getElementById('enter-code-close-btn')?.addEventListener('click', handleCloseEnterModal);
@@ -1275,15 +1280,26 @@ async function startQRScanner() {
   const startBtn  = document.getElementById('scan-qr-btn');
   const container = document.getElementById('scanner-video-container');
 
-  if (startBtn) startBtn.setAttribute('hidden', '');
-  if (stopBtn)  stopBtn.removeAttribute('hidden');
+  if (!container) return;
+
+  if (startBtn) {
+    startBtn.setAttribute('hidden', '');
+    startBtn.disabled = true;
+  }
+  if (stopBtn) {
+    stopBtn.removeAttribute('hidden');
+    stopBtn.disabled = false;
+  }
 
   await QR.startScanner(
     container,
     async (data) => {
       // QR scanned successfully
       if (stopBtn)  stopBtn.setAttribute('hidden', '');
-      if (startBtn) startBtn.removeAttribute('hidden');
+      if (startBtn) {
+        startBtn.removeAttribute('hidden');
+        startBtn.disabled = false;
+      }
 
       // Auto-fill input field with scanned data
       const textarea = document.getElementById('paste-packet-input');
@@ -1294,7 +1310,10 @@ async function startQRScanner() {
     (err) => {
       Toast.error(err);
       if (stopBtn)  stopBtn.setAttribute('hidden', '');
-      if (startBtn) startBtn.removeAttribute('hidden');
+      if (startBtn) {
+        startBtn.removeAttribute('hidden');
+        startBtn.disabled = false;
+      }
     }
   );
 }

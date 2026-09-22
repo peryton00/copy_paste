@@ -48,12 +48,13 @@ export const QR = {
 
   // ---- Scanner ----
 
-  _videoEl:     null,
-  _streamRef:   null,
+  _videoEl:      null,
+  _streamRef:    null,
   _scanInterval: null,
-  _canvas:      null,
-  _ctx:         null,
-  _active:      false,
+  _canvas:       null,
+  _ctx:          null,
+  _active:       false,
+  _starting:     false,
 
   /**
    * Start QR scanner using device camera.
@@ -62,7 +63,8 @@ export const QR = {
    * @param {Function}    onError(err)   - called on camera/scan error
    */
   async startScanner(videoContainer, onResult, onError) {
-    if (this._active) this.stopScanner();
+    if (this._starting) return;
+    if (this._active && this._videoEl) return;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       onError('Camera access is not available in this browser or context.');
@@ -74,63 +76,85 @@ export const QR = {
       return;
     }
 
+    this._starting = true;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
       });
 
       this._streamRef = stream;
       this._active = true;
 
       const video = document.createElement('video');
-      video.setAttribute('autoplay', '');
-      video.setAttribute('muted', '');
-      video.setAttribute('playsinline', '');
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'cover';
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
+      video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;';
       video.srcObject = stream;
       this._videoEl = video;
 
       videoContainer.innerHTML = '';
       videoContainer.appendChild(video);
 
-      await video.play();
+      // Add visual viewfinder overlay
+      const viewfinder = document.createElement('div');
+      viewfinder.className = 'scanner-viewfinder';
+      const laser = document.createElement('div');
+      laser.className = 'scanner-laser';
+      viewfinder.appendChild(laser);
+      videoContainer.appendChild(viewfinder);
+
+      try {
+        await video.play();
+      } catch (err) {
+        console.warn('[QR] video.play error:', err);
+      }
 
       // Canvas for frame extraction
       this._canvas = document.createElement('canvas');
-      this._ctx = this._canvas.getContext('2d');
+      this._ctx = this._canvas.getContext('2d', { willReadFrequently: true });
 
       this._scanInterval = setInterval(() => {
-        if (!this._active || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+        if (!this._active || !this._videoEl || video.readyState < 2) return;
 
-        const w = video.videoWidth;
-        const h = video.videoHeight;
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
         if (!w || !h) return;
 
         this._canvas.width  = w;
         this._canvas.height = h;
         this._ctx.drawImage(video, 0, 0, w, h);
 
-        const imageData = this._ctx.getImageData(0, 0, w, h);
-        const code = window.jsQR(imageData.data, w, h, {
-          inversionAttempts: 'dontInvert'
-        });
+        try {
+          const imageData = this._ctx.getImageData(0, 0, w, h);
+          const code = window.jsQR(imageData.data, w, h, {
+            inversionAttempts: 'dontInvert'
+          });
 
-        if (code && code.data) {
-          this.stopScanner();
-          onResult(code.data);
+          if (code && code.data) {
+            this.stopScanner();
+            onResult(code.data);
+          }
+        } catch (scanErr) {
+          // ignore transient frame read error
         }
-      }, 250);
+      }, 150);
 
     } catch (e) {
       this._active = false;
       const msg = e.name === 'NotAllowedError'
-        ? 'Camera permission was denied.'
+        ? 'Camera permission was denied. Please allow camera access in your browser settings.'
         : e.name === 'NotFoundError'
           ? 'No camera found on this device.'
           : `Camera error: ${e.message}`;
       onError(msg);
+    } finally {
+      this._starting = false;
     }
   },
 
@@ -139,17 +163,24 @@ export const QR = {
    */
   stopScanner() {
     this._active = false;
+    this._starting = false;
 
-    clearInterval(this._scanInterval);
-    this._scanInterval = null;
+    if (this._scanInterval) {
+      clearInterval(this._scanInterval);
+      this._scanInterval = null;
+    }
 
     if (this._streamRef) {
-      this._streamRef.getTracks().forEach(t => t.stop());
+      try {
+        this._streamRef.getTracks().forEach(t => t.stop());
+      } catch (e) { /* ignore */ }
       this._streamRef = null;
     }
 
     if (this._videoEl) {
-      this._videoEl.srcObject = null;
+      try {
+        this._videoEl.srcObject = null;
+      } catch (e) { /* ignore */ }
       this._videoEl = null;
     }
 
