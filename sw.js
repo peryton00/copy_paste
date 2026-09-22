@@ -7,11 +7,10 @@
 
 'use strict';
 
-const CACHE_NAME    = 'lan-clipboard-v2';
+const CACHE_NAME    = 'lan-clipboard-v3';
 const CACHE_ASSETS  = [
   './',
   './index.html',
-  './manifest.json',
   './assets/icons/icon.svg',
   './styles/compiled.css',
   './js/app.js',
