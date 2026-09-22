@@ -58,21 +58,21 @@ export const QR = {
 
   /**
    * Start QR scanner using device camera.
-   * @param {HTMLElement} videoContainer - element to inject video into
-   * @param {Function}    onResult(text) - called when a QR code is detected
-   * @param {Function}    onError(err)   - called on camera/scan error
+   * @param {HTMLVideoElement} videoEl
+   * @param {Function}         onResult(text) - called when a QR code is detected
+   * @param {Function}         onError(err)   - called on camera/scan error
    */
-  async startScanner(videoContainer, onResult, onError) {
+  async startScanner(videoEl, onResult, onError) {
     if (this._starting) return;
     if (this._active && this._videoEl) return;
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      onError('Camera access is not available in this browser or context.');
+      if (onError) onError('Camera access is not available in this browser or context.');
       return;
     }
 
     if (!window.jsQR) {
-      onError('QR scanning library not loaded.');
+      if (onError) onError('QR scanning library not loaded.');
       return;
     }
 
@@ -80,81 +80,85 @@ export const QR = {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
 
       this._streamRef = stream;
       this._active = true;
+      this._videoEl = videoEl;
 
-      const video = document.createElement('video');
-      video.muted = true;
-      video.playsInline = true;
-      video.autoplay = true;
-      video.setAttribute('autoplay', 'true');
-      video.setAttribute('muted', 'true');
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;';
-      video.srcObject = stream;
-      this._videoEl = video;
+      videoEl.setAttribute('playsinline', 'true');
+      videoEl.setAttribute('webkit-playsinline', 'true');
+      videoEl.setAttribute('muted', 'true');
+      videoEl.setAttribute('autoplay', 'true');
+      videoEl.muted = true;
+      videoEl.srcObject = stream;
+      videoEl.style.display = 'block';
 
-      videoContainer.innerHTML = '';
-      videoContainer.appendChild(video);
-
-      // Add visual viewfinder overlay
-      const viewfinder = document.createElement('div');
-      viewfinder.className = 'scanner-viewfinder';
-      const laser = document.createElement('div');
-      laser.className = 'scanner-laser';
-      viewfinder.appendChild(laser);
-      videoContainer.appendChild(viewfinder);
+      await new Promise((resolve) => {
+        if (videoEl.readyState >= 2) {
+          resolve();
+        } else {
+          videoEl.onloadedmetadata = () => resolve();
+          // Fallback timeout in case event is missed
+          setTimeout(resolve, 500);
+        }
+      });
 
       try {
-        await video.play();
+        await videoEl.play();
       } catch (err) {
-        console.warn('[QR] video.play error:', err);
+        console.warn('[QR] video play error:', err);
       }
 
       // Canvas for frame extraction
       this._canvas = document.createElement('canvas');
       this._ctx = this._canvas.getContext('2d', { willReadFrequently: true });
 
+      // Continuous scanning loop (non-blocking, checks every 250ms)
       this._scanInterval = setInterval(() => {
-        if (!this._active || !this._videoEl || video.readyState < 2) return;
-
-        const w = video.videoWidth || 640;
-        const h = video.videoHeight || 480;
-        if (!w || !h) return;
-
-        this._canvas.width  = w;
-        this._canvas.height = h;
-        this._ctx.drawImage(video, 0, 0, w, h);
-
-        try {
-          const imageData = this._ctx.getImageData(0, 0, w, h);
-          const code = window.jsQR(imageData.data, w, h, {
-            inversionAttempts: 'dontInvert'
-          });
-
-          if (code && code.data) {
-            this.stopScanner();
-            onResult(code.data);
-          }
-        } catch (scanErr) {
-          // ignore transient frame read error
+        if (!this._active || !this._videoEl || videoEl.readyState < 2) return;
+        const code = this.scanCurrentFrame();
+        if (code && onResult) {
+          this.stopScanner();
+          onResult(code);
         }
-      }, 150);
+      }, 250);
 
     } catch (e) {
-      this._active = false;
+      this.stopScanner();
       const msg = e.name === 'NotAllowedError'
         ? 'Camera permission was denied. Please allow camera access in your browser settings.'
         : e.name === 'NotFoundError'
           ? 'No camera found on this device.'
           : `Camera error: ${e.message}`;
-      onError(msg);
+      if (onError) onError(msg);
     } finally {
       this._starting = false;
+    }
+  },
+
+  scanCurrentFrame() {
+    if (!this._videoEl || this._videoEl.readyState < 2 || !this._ctx) return null;
+    const v = this._videoEl;
+    const w = v.videoWidth || 640;
+    const h = v.videoHeight || 480;
+    if (!w || !h) return null;
+
+    this._canvas.width = w;
+    this._canvas.height = h;
+    this._ctx.drawImage(v, 0, 0, w, h);
+
+    try {
+      const imgData = this._ctx.getImageData(0, 0, w, h);
+      const code = window.jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+      return code && code.data ? code.data : null;
+    } catch {
+      return null;
     }
   },
 
@@ -180,12 +184,13 @@ export const QR = {
     if (this._videoEl) {
       try {
         this._videoEl.srcObject = null;
+        this._videoEl.style.display = 'none';
       } catch (e) { /* ignore */ }
       this._videoEl = null;
     }
 
     this._canvas = null;
-    this._ctx    = null;
+    this._ctx = null;
   },
 
   /**

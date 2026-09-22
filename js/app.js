@@ -1145,46 +1145,92 @@ function refreshQRDisplay() {
 // Pairing: Responder (Enter Code / Scan)
 // ============================================================
 
+function resetScannerUI() {
+  QR.stopScanner();
+  const videoEl     = document.getElementById('qr-video');
+  const viewfinder  = document.getElementById('scanner-viewfinder');
+  const placeholder = document.getElementById('scanner-placeholder');
+  const startBtn    = document.getElementById('scan-qr-btn');
+  const captureBtn  = document.getElementById('capture-qr-btn');
+  const stopBtn     = document.getElementById('stop-scan-btn');
+
+  if (videoEl)     videoEl.style.display = 'none';
+  if (viewfinder)  viewfinder.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'flex';
+  if (startBtn) {
+    startBtn.style.display = '';
+    startBtn.disabled = false;
+  }
+  if (captureBtn)  captureBtn.style.display = 'none';
+  if (stopBtn)     stopBtn.style.display = 'none';
+}
+
+async function startQRScanner() {
+  const videoEl     = document.getElementById('qr-video');
+  const viewfinder  = document.getElementById('scanner-viewfinder');
+  const placeholder = document.getElementById('scanner-placeholder');
+  const startBtn    = document.getElementById('scan-qr-btn');
+  const captureBtn  = document.getElementById('capture-qr-btn');
+  const stopBtn     = document.getElementById('stop-scan-btn');
+
+  if (!videoEl) return;
+
+  if (startBtn)    startBtn.style.display = 'none';
+  if (captureBtn)  captureBtn.style.display = '';
+  if (stopBtn)     stopBtn.style.display = '';
+  if (placeholder) placeholder.style.display = 'none';
+  if (viewfinder)  viewfinder.style.display = 'block';
+
+  await QR.startScanner(
+    videoEl,
+    async (data) => {
+      // Auto-detected QR code
+      resetScannerUI();
+      const textarea = document.getElementById('paste-packet-input');
+      if (textarea) textarea.value = data;
+      Toast.success('QR Code detected! Connecting...');
+      await submitPacket();
+    },
+    (err) => {
+      resetScannerUI();
+      Toast.error(err);
+    }
+  );
+}
+
 function setupPairingEnterFlow() {
-  // Helper to open scanner modal and auto-start camera
+  // Open scanner modal (resets UI so user can click "Open Camera")
   const openScannerModal = () => {
     Modal.close('pairing-modal');
+    resetScannerUI();
     Modal.open('enter-code-modal');
     document.getElementById('tab-scan')?.click();
-    setTimeout(() => startQRScanner(), 150);
   };
 
-  // Switch to "Enter Code / Scan" mode (from pairing modal)
+  // Switch to "Enter Code / Scan" mode
   document.getElementById('switch-to-enter-btn')?.addEventListener('click', openScannerModal);
-
-  // Enter code button (standalone pair view)
   document.getElementById('switch-to-enter-standalone')?.addEventListener('click', openScannerModal);
 
-  // Scan QR button inside tab
+  // Open camera button
   document.getElementById('scan-qr-btn')?.addEventListener('click', () => {
     startQRScanner();
   });
 
-  const resetScannerUI = () => {
-    QR.stopScanner();
-    document.getElementById('stop-scan-btn')?.setAttribute('hidden', '');
-    const startBtn = document.getElementById('scan-qr-btn');
-    if (startBtn) {
-      startBtn.removeAttribute('hidden');
-      startBtn.disabled = false;
+  // Manual Scan/Capture QR button
+  document.getElementById('capture-qr-btn')?.addEventListener('click', async () => {
+    const code = QR.scanCurrentFrame();
+    if (code) {
+      resetScannerUI();
+      const textarea = document.getElementById('paste-packet-input');
+      if (textarea) textarea.value = code;
+      Toast.success('QR Code captured! Connecting...');
+      await submitPacket();
+    } else {
+      Toast.warning('No QR code detected. Point your camera clearly at the QR code and try again.');
     }
-    const container = document.getElementById('scanner-video-container');
-    if (container) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:1rem;">
-          <i class="ph-camera" aria-hidden="true" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:0.75rem;"></i>
-          <p style="font-size:0.8125rem;color:var(--text-muted);">Camera preview will appear here</p>
-        </div>
-      `;
-    }
-  };
+  });
 
-  // Stop scanner
+  // Stop scanner button
   document.getElementById('stop-scan-btn')?.addEventListener('click', resetScannerUI);
 
   // Submit code (manual entry)
@@ -1237,8 +1283,6 @@ async function submitPairingCode() {
     return;
   }
 
-  // The pairing code alone is part of the offer — we need the full offer packet.
-  // Inform the user that they need the full offer packet (QR or paste)
   Toast.info('Please use the paste method to enter the full connection data from the other device.');
 }
 
@@ -1258,10 +1302,10 @@ async function submitPacket() {
     if (!session) return; // error already shown
 
     // Show response packet for user to send back
-    const pending   = session.getPendingRequest();
+    const pending = session.getPendingRequest();
     if (!pending) return;
 
-    textarea.value  = '';
+    textarea.value = '';
     document.getElementById('responder-result')?.removeAttribute('hidden');
     const displayEl = document.getElementById('response-packet-display');
     if (displayEl) displayEl.textContent = pending.responsePayload;
@@ -1273,49 +1317,6 @@ async function submitPacket() {
   } catch (e) {
     Toast.error(`Failed to process pairing data: ${e.message}`);
   }
-}
-
-async function startQRScanner() {
-  const stopBtn   = document.getElementById('stop-scan-btn');
-  const startBtn  = document.getElementById('scan-qr-btn');
-  const container = document.getElementById('scanner-video-container');
-
-  if (!container) return;
-
-  if (startBtn) {
-    startBtn.setAttribute('hidden', '');
-    startBtn.disabled = true;
-  }
-  if (stopBtn) {
-    stopBtn.removeAttribute('hidden');
-    stopBtn.disabled = false;
-  }
-
-  await QR.startScanner(
-    container,
-    async (data) => {
-      // QR scanned successfully
-      if (stopBtn)  stopBtn.setAttribute('hidden', '');
-      if (startBtn) {
-        startBtn.removeAttribute('hidden');
-        startBtn.disabled = false;
-      }
-
-      // Auto-fill input field with scanned data
-      const textarea = document.getElementById('paste-packet-input');
-      if (textarea) textarea.value = data;
-      Toast.success('QR Code scanned successfully! Connecting...');
-      await submitPacket();
-    },
-    (err) => {
-      Toast.error(err);
-      if (stopBtn)  stopBtn.setAttribute('hidden', '');
-      if (startBtn) {
-        startBtn.removeAttribute('hidden');
-        startBtn.disabled = false;
-      }
-    }
-  );
 }
 
 function approvePairing() {

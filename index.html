@@ -832,23 +832,37 @@
 
         <!-- Scan panel -->
         <div id="scan-panel" class="pair-panel pair-panel--active">
-          <div class="scanner-area" aria-label="QR code scanner">
-            <div id="scanner-video-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-              <div style="text-align:center;padding:1rem;">
-                <i class="ph-camera" aria-hidden="true" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:0.75rem;"></i>
-                <p style="font-size:0.8125rem;color:var(--text-muted);">Camera preview will appear here</p>
-              </div>
+          <div class="scanner-area" id="scanner-area" aria-label="QR code scanner" style="min-height:260px;height:260px;position:relative;">
+            <!-- Video element (statically placed in DOM for hardware playback) -->
+            <video id="qr-video" playsinline webkit-playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;display:none;background:#000;border-radius:inherit;"></video>
+            
+            <!-- Viewfinder overlay with animated laser -->
+            <div class="scanner-viewfinder" id="scanner-viewfinder" style="display:none;">
+              <div class="scanner-laser"></div>
+            </div>
+
+            <!-- Placeholder (when camera is off) -->
+            <div id="scanner-placeholder" style="text-align:center;padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <i class="ph-camera" aria-hidden="true" style="font-size:2.5rem;color:var(--text-muted);display:block;margin-bottom:0.75rem;"></i>
+              <p style="font-size:0.875rem;font-weight:500;color:var(--text-primary);margin-bottom:0.25rem;">Camera is Off</p>
+              <p style="font-size:0.75rem;color:var(--text-muted);">Click "Open Camera" to start live preview</p>
             </div>
           </div>
-          <div class="flex items-center gap-3 justify-center mt-4">
-            <button class="btn-primary btn" id="scan-qr-btn" aria-label="Start camera to scan QR code">
-              <i class="ph-camera btn-icon" aria-hidden="true"></i> Start Camera
+
+          <div class="flex items-center gap-3 justify-center mt-4" style="flex-wrap:wrap;">
+            <button class="btn-primary btn" id="scan-qr-btn" aria-label="Open camera">
+              <i class="ph-camera btn-icon" aria-hidden="true"></i> Open Camera
             </button>
-            <button class="btn btn-ghost" id="stop-scan-btn" hidden aria-label="Stop camera scanner">
-              <i class="ph-stop btn-icon" aria-hidden="true"></i> Stop
+            <button class="btn-primary btn" id="capture-qr-btn" style="display:none;" aria-label="Scan and capture current frame">
+              <i class="ph-scan btn-icon" aria-hidden="true"></i> Scan QR Now
+            </button>
+            <button class="btn btn-ghost" id="stop-scan-btn" style="display:none;" aria-label="Stop camera scanner">
+              <i class="ph-stop btn-icon" aria-hidden="true"></i> Stop Camera
             </button>
           </div>
-          <p class="pair-instructions">Point the camera at the QR code displayed on the other device.</p>
+
+          <p class="pair-instructions">Point the camera at the QR code on the other device.</p>
+          
           <div style="text-align:center;margin-top:1rem;">
             <button class="btn btn-ghost btn--sm" id="scan-cancel-footer-btn" aria-label="Cancel scanner">
               <i class="ph-x btn-icon" aria-hidden="true"></i> Cancel
