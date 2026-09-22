@@ -63,76 +63,65 @@ export const QR = {
    * @param {Function}         onError(err)   - called on camera/scan error
    */
   async startScanner(videoEl, onResult, onError) {
-    if (this._starting) return;
-    if (this._active && this._videoEl) return;
+    // Always stop any previous session first (clears _active, _starting, stream)
+    this.stopScanner();
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      if (onError) onError('Camera access is not available in this browser or context.');
+      const msg = 'Camera not available. Use HTTPS or localhost.';
+      console.error('[QR]', msg);
+      if (onError) onError(msg);
       return;
     }
 
     if (!window.jsQR) {
-      if (onError) onError('QR scanning library not loaded.');
+      const msg = 'QR library (jsQR) not loaded.';
+      console.error('[QR]', msg);
+      if (onError) onError(msg);
       return;
     }
 
     this._starting = true;
 
     try {
+      console.log('[QR] Requesting camera…');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
 
+      console.log('[QR] Camera granted, attaching stream…');
       this._streamRef = stream;
-      this._active = true;
-      this._videoEl = videoEl;
+      this._active    = true;
+      this._videoEl   = videoEl;
 
-      videoEl.setAttribute('playsinline', 'true');
-      videoEl.setAttribute('webkit-playsinline', 'true');
-      videoEl.setAttribute('muted', 'true');
-      videoEl.setAttribute('autoplay', 'true');
-      videoEl.muted = true;
+      videoEl.muted    = true;
       videoEl.srcObject = stream;
       videoEl.style.display = 'block';
 
-      await new Promise((resolve) => {
-        if (videoEl.readyState >= 2) {
-          resolve();
-        } else {
-          videoEl.onloadedmetadata = () => resolve();
-          // Fallback timeout in case event is missed
-          setTimeout(resolve, 500);
-        }
+      // Wait for video to be playable (canplay is more reliable than loadedmetadata)
+      await new Promise(resolve => {
+        if (videoEl.readyState >= 3) { resolve(); return; }
+        const done = () => { videoEl.removeEventListener('canplay', done); resolve(); };
+        videoEl.addEventListener('canplay', done);
+        setTimeout(resolve, 800); // fallback
       });
 
-      try {
-        await videoEl.play();
-      } catch (err) {
-        console.warn('[QR] video play error:', err);
-      }
+      await videoEl.play().catch(e => console.warn('[QR] play():', e));
+      console.log('[QR] Video playing, readyState:', videoEl.readyState);
 
-      // Canvas for frame extraction
       this._canvas = document.createElement('canvas');
-      this._ctx = this._canvas.getContext('2d', { willReadFrequently: true });
+      this._ctx    = this._canvas.getContext('2d', { willReadFrequently: true });
 
-      // Continuous scanning loop (non-blocking, checks every 250ms)
       this._scanInterval = setInterval(() => {
         if (!this._active || !this._videoEl || videoEl.readyState < 2) return;
         const code = this.scanCurrentFrame();
-        if (code && onResult) {
-          this.stopScanner();
-          onResult(code);
-        }
+        if (code && onResult) { this.stopScanner(); onResult(code); }
       }, 250);
 
     } catch (e) {
+      console.error('[QR] Camera error:', e);
       this.stopScanner();
       const msg = e.name === 'NotAllowedError'
-        ? 'Camera permission was denied. Please allow camera access in your browser settings.'
+        ? 'Camera permission denied. Allow camera access in your browser settings.'
         : e.name === 'NotFoundError'
           ? 'No camera found on this device.'
           : `Camera error: ${e.message}`;
