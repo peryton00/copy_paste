@@ -80,16 +80,32 @@ async function bootstrap() {
   }
 
   // Returning user: hide first run screen and display app
-  document.getElementById('first-run-screen')?.setAttribute('hidden', '');
-  document.getElementById('app-shell')?.removeAttribute('hidden');
+  const firstRunEl = document.getElementById('first-run-screen');
+  const appShellEl = document.getElementById('app-shell');
+  if (firstRunEl) {
+    firstRunEl.setAttribute('hidden', '');
+    firstRunEl.style.display = 'none';
+  }
+  if (appShellEl) {
+    appShellEl.removeAttribute('hidden');
+    appShellEl.style.display = '';
+  }
 
   appState.device = savedDevice;
   await initApp();
 }
 
 function showFirstRun() {
-  document.getElementById('first-run-screen').removeAttribute('hidden');
-  document.getElementById('app-shell').setAttribute('hidden', '');
+  const firstRunEl = document.getElementById('first-run-screen');
+  const appShellEl = document.getElementById('app-shell');
+  if (firstRunEl) {
+    firstRunEl.removeAttribute('hidden');
+    firstRunEl.style.display = 'flex';
+  }
+  if (appShellEl) {
+    appShellEl.setAttribute('hidden', '');
+    appShellEl.style.display = 'none';
+  }
 
   const nameInput = document.getElementById('first-run-name');
   const continueBtn = document.getElementById('first-run-continue');
@@ -114,8 +130,14 @@ function showFirstRun() {
     await Settings.set('localDevice', device);
     appState.device = device;
 
-    document.getElementById('first-run-screen').setAttribute('hidden', '');
-    document.getElementById('app-shell').removeAttribute('hidden');
+    if (firstRunEl) {
+      firstRunEl.setAttribute('hidden', '');
+      firstRunEl.style.display = 'none';
+    }
+    if (appShellEl) {
+      appShellEl.removeAttribute('hidden');
+      appShellEl.style.display = '';
+    }
 
     await initApp();
   });
@@ -127,8 +149,16 @@ function showFirstRun() {
 
 async function initApp() {
   // Ensure screen visibility
-  document.getElementById('first-run-screen')?.setAttribute('hidden', '');
-  document.getElementById('app-shell')?.removeAttribute('hidden');
+  const firstRunEl = document.getElementById('first-run-screen');
+  const appShellEl = document.getElementById('app-shell');
+  if (firstRunEl) {
+    firstRunEl.setAttribute('hidden', '');
+    firstRunEl.style.display = 'none';
+  }
+  if (appShellEl) {
+    appShellEl.removeAttribute('hidden');
+    appShellEl.style.display = '';
+  }
 
   // Init connection manager
   connManager.init({
@@ -1045,14 +1075,15 @@ function setupPairingModal() {
   document.getElementById('pairing-cancel-btn')?.addEventListener('click', handleCancelPairing);
   document.getElementById('pairing-cancel-footer-btn')?.addEventListener('click', handleCancelPairing);
 
-  // Tab switching (QR / Code)
-  document.querySelectorAll('.pair-flow-tab').forEach(tab => {
+  // Tab switching (QR / Code) scoped to pairing-modal
+  document.querySelectorAll('#pairing-modal .pair-flow-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.tab;
+      if (!target) return;
       appState.pairing.activeTab = target;
-      document.querySelectorAll('.pair-flow-tab').forEach(t => t.classList.remove('pair-flow-tab--active'));
+      document.querySelectorAll('#pairing-modal .pair-flow-tab').forEach(t => t.classList.remove('pair-flow-tab--active'));
       tab.classList.add('pair-flow-tab--active');
-      document.querySelectorAll('.pair-panel').forEach(p => p.classList.remove('pair-panel--active'));
+      document.querySelectorAll('#pairing-modal .pair-panel').forEach(p => p.classList.remove('pair-panel--active'));
       document.getElementById(`pair-panel-${target}`)?.classList.add('pair-panel--active');
 
       if (target === 'qr' && appState.pairing.activeTab !== 'qr') {
@@ -1184,6 +1215,7 @@ async function startQRScanner() {
   if (placeholder) placeholder.style.display = 'none';
   if (viewfinder)  viewfinder.style.display = 'block';
   if (laserBar)    laserBar.style.display = 'block';
+  videoEl.style.display = 'block';
 
   await QR.startScanner(
     videoEl,
@@ -1203,12 +1235,35 @@ async function startQRScanner() {
 }
 
 function setupPairingEnterFlow() {
+  const tabScan    = document.getElementById('tab-scan');
+  const tabPaste   = document.getElementById('tab-paste');
+  const scanPanel  = document.getElementById('scan-panel');
+  const pastePanel = document.getElementById('paste-panel');
+
+  const showScanTab = () => {
+    tabScan?.classList.add('pair-flow-tab--active');
+    tabPaste?.classList.remove('pair-flow-tab--active');
+    scanPanel?.classList.add('pair-panel--active');
+    pastePanel?.classList.remove('pair-panel--active');
+  };
+
+  const showPasteTab = () => {
+    tabPaste?.classList.add('pair-flow-tab--active');
+    tabScan?.classList.remove('pair-flow-tab--active');
+    pastePanel?.classList.add('pair-panel--active');
+    scanPanel?.classList.remove('pair-panel--active');
+    resetScannerUI();
+  };
+
+  tabScan?.addEventListener('click', showScanTab);
+  tabPaste?.addEventListener('click', showPasteTab);
+
   // Open scanner modal (resets UI so user can click "Open Camera")
   const openScannerModal = () => {
     Modal.close('pairing-modal');
     resetScannerUI();
     Modal.open('enter-code-modal');
-    document.getElementById('tab-scan')?.click();
+    showScanTab();
   };
 
   // Switch to "Enter Code / Scan" mode
@@ -1236,6 +1291,26 @@ function setupPairingEnterFlow() {
 
   // Stop scanner button
   document.getElementById('stop-scan-btn')?.addEventListener('click', resetScannerUI);
+
+  // Snap / Upload Photo fallback
+  const uploadInput = document.getElementById('upload-qr-input');
+  uploadInput?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      Toast.info('Scanning photo for QR code...');
+      const code = await QR.scanImageFile(file);
+      resetScannerUI();
+      const textarea = document.getElementById('paste-packet-input');
+      if (textarea) textarea.value = code;
+      Toast.success('QR Code detected from photo! Connecting...');
+      await submitPacket();
+    } catch (err) {
+      Toast.error(err.message || 'No QR code found in photo. Please ensure it is well-lit and in focus.');
+    } finally {
+      uploadInput.value = '';
+    }
+  });
 
   // Submit code (manual entry)
   document.getElementById('enter-code-submit-btn')?.addEventListener('click', () => {

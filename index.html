@@ -859,6 +859,10 @@
             <button class="btn btn-ghost" id="stop-scan-btn" style="display:none;" aria-label="Stop camera scanner">
               <i class="ph-stop btn-icon" aria-hidden="true"></i> Stop Camera
             </button>
+            <label class="btn btn-secondary" id="upload-qr-label" style="cursor:pointer;margin:0;" aria-label="Scan QR by taking a photo or uploading an image">
+              <i class="ph-image btn-icon" aria-hidden="true"></i> Snap/Upload Photo
+              <input type="file" id="upload-qr-input" accept="image/*" capture="environment" style="display:none;">
+            </label>
           </div>
 
           <p class="pair-instructions">Point the camera at the QR code on the other device.</p>
@@ -987,30 +991,7 @@
      SCRIPTS
 ============================================================ -->
 <script>
-  // Setup enter-code modal tabs (vanilla, no module needed)
   document.addEventListener('DOMContentLoaded', () => {
-    const tabScan  = document.getElementById('tab-scan');
-    const tabPaste = document.getElementById('tab-paste');
-    const scanPanel  = document.getElementById('scan-panel');
-    const pastePanel = document.getElementById('paste-panel');
-
-    if (tabScan && tabPaste) {
-      tabScan.addEventListener('click', () => {
-        tabScan.classList.add('pair-flow-tab--active');
-        tabPaste.classList.remove('pair-flow-tab--active');
-        scanPanel.classList.add('pair-panel--active');
-        pastePanel.classList.remove('pair-panel--active');
-      });
-      tabPaste.addEventListener('click', () => {
-        tabPaste.classList.add('pair-flow-tab--active');
-        tabScan.classList.remove('pair-flow-tab--active');
-        pastePanel.classList.add('pair-panel--active');
-        scanPanel.classList.remove('pair-panel--active');
-      });
-    }
-
-    // Note: "switch-to-enter-standalone" is handled by app.js module
-
     // Pairing code timer sync
     const t1 = document.getElementById('pairing-timer');
     const t2 = document.getElementById('pairing-timer-2');

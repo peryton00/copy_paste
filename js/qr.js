@@ -27,12 +27,12 @@ export const QR = {
       const correctLevel = window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.L : 1;
       new window.QRCode(container, {
         text,
-        width:          opts.width       || 200,
-        height:         opts.height      || 200,
+        width:          opts.width       || 220,
+        height:         opts.height      || 220,
         colorDark:      opts.colorDark   || '#180E12',
         colorLight:     opts.colorLight  || '#E4DCCB',
         correctLevel:   correctLevel,
-        quietZone:      10,
+        quietZone:      8,
         quietZoneColor: opts.colorLight  || '#E4DCCB'
       });
     } catch (e) {
@@ -63,11 +63,11 @@ export const QR = {
    * @param {Function}         onError(err)   - called on camera/scan error
    */
   async startScanner(videoEl, onResult, onError) {
-    // Always stop any previous session first (clears _active, _starting, stream)
+    // Always stop any previous session first
     this.stopScanner();
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      const msg = 'Camera not available. Use HTTPS or localhost.';
+      const msg = 'Live camera stream is not supported in this browser context (requires HTTPS or localhost). You can still use the Snap/Upload Photo button below to scan!';
       console.error('[QR]', msg);
       if (onError) onError(msg);
       return;
@@ -84,28 +84,34 @@ export const QR = {
 
     try {
       console.log('[QR] Requesting camera…');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+      } catch (camErr) {
+        console.warn('[QR] Primary camera constraint failed, falling back to basic video:', camErr);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
 
       console.log('[QR] Camera granted, attaching stream…');
       this._streamRef = stream;
       this._active    = true;
       this._videoEl   = videoEl;
 
-      videoEl.muted    = true;
+      videoEl.muted = true;
+      videoEl.setAttribute('playsinline', '');
+      videoEl.setAttribute('webkit-playsinline', '');
+      videoEl.setAttribute('autoplay', '');
       videoEl.srcObject = stream;
       videoEl.style.display = 'block';
 
-      // Wait for video to be playable (canplay is more reliable than loadedmetadata)
-      await new Promise(resolve => {
-        if (videoEl.readyState >= 3) { resolve(); return; }
-        const done = () => { videoEl.removeEventListener('canplay', done); resolve(); };
-        videoEl.addEventListener('canplay', done);
-        setTimeout(resolve, 800); // fallback
-      });
+      try {
+        await videoEl.play();
+      } catch (playErr) {
+        console.warn('[QR] video play warning:', playErr);
+      }
 
-      await videoEl.play().catch(e => console.warn('[QR] play():', e));
       console.log('[QR] Video playing, readyState:', videoEl.readyState);
 
       this._canvas = document.createElement('canvas');
@@ -114,16 +120,19 @@ export const QR = {
       this._scanInterval = setInterval(() => {
         if (!this._active || !this._videoEl || videoEl.readyState < 2) return;
         const code = this.scanCurrentFrame();
-        if (code && onResult) { this.stopScanner(); onResult(code); }
+        if (code && onResult) {
+          this.stopScanner();
+          onResult(code);
+        }
       }, 250);
 
     } catch (e) {
       console.error('[QR] Camera error:', e);
       this.stopScanner();
       const msg = e.name === 'NotAllowedError'
-        ? 'Camera permission denied. Allow camera access in your browser settings.'
+        ? 'Camera permission was denied. Please allow camera access in browser settings, or use the Snap/Upload Photo button.'
         : e.name === 'NotFoundError'
-          ? 'No camera found on this device.'
+          ? 'No camera found on this device. You can use Snap/Upload Photo or copy/paste pairing data.'
           : `Camera error: ${e.message}`;
       if (onError) onError(msg);
     } finally {
@@ -144,11 +153,53 @@ export const QR = {
 
     try {
       const imgData = this._ctx.getImageData(0, 0, w, h);
-      const code = window.jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+      const code = window.jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
       return code && code.data ? code.data : null;
     } catch {
       return null;
     }
+  },
+
+  /**
+   * Scan QR code from an image File (e.g. from file picker or camera photo capture)
+   * @param {File} file
+   * @returns {Promise<string>} decoded QR code text
+   */
+  async scanImageFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!window.jsQR) {
+        reject(new Error('QR scanner library (jsQR) not loaded.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0);
+          try {
+            const imgData = ctx.getImageData(0, 0, img.width, img.height);
+            const code = window.jsQR(imgData.data, img.width, img.height, {
+              inversionAttempts: 'attemptBoth'
+            });
+            if (code && code.data) {
+              resolve(code.data);
+            } else {
+              reject(new Error('No QR code detected in the selected image.'));
+            }
+          } catch (e) {
+            reject(new Error('Failed to process image: ' + e.message));
+          }
+        };
+        img.onerror = () => reject(new Error('Failed to load image file.'));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file.'));
+      reader.readAsDataURL(file);
+    });
   },
 
   /**

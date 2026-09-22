@@ -540,7 +540,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; 
 .pairing-code-display { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border-accent); border-radius: var(--radius-lg); }
 .pairing-code-value { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; letter-spacing: 0.22em; color: var(--accent-primary); line-height: 1; text-align: center; }
 .pairing-code-expiry { font-size: 0.6875rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
-.qr-container { display: flex; justify-content: center; align-items: center; background: var(--color-dust-veil); border-radius: var(--radius-lg); padding: 1.5rem; width: 200px; height: 200px; margin: 0 auto; }
+.qr-container { display: flex; justify-content: center; align-items: center; background: var(--color-dust-veil); border-radius: var(--radius-lg); padding: 10px; width: 240px; height: 240px; margin: 0 auto; }
 .qr-container canvas, .qr-container img { max-width: 100%; max-height: 100%; }
 .pair-flow-tabs { display: flex; gap: 0.5rem; padding: 3px; background: rgba(0,0,0,0.2); border-radius: var(--radius-lg); }
 .pair-flow-tab { flex: 1; padding: 0.5rem 1rem; text-align: center; font-size: 0.8125rem; font-weight: 500; color: var(--text-muted); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); border: 1px solid transparent; background: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
