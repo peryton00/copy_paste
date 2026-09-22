@@ -1149,6 +1149,7 @@ function resetScannerUI() {
   QR.stopScanner();
   const videoEl     = document.getElementById('qr-video');
   const viewfinder  = document.getElementById('scanner-viewfinder');
+  const laserBar    = document.getElementById('scanner-laser-bar');
   const placeholder = document.getElementById('scanner-placeholder');
   const startBtn    = document.getElementById('scan-qr-btn');
   const captureBtn  = document.getElementById('capture-qr-btn');
@@ -1156,6 +1157,7 @@ function resetScannerUI() {
 
   if (videoEl)     videoEl.style.display = 'none';
   if (viewfinder)  viewfinder.style.display = 'none';
+  if (laserBar)    laserBar.style.display = 'none';
   if (placeholder) placeholder.style.display = 'flex';
   if (startBtn) {
     startBtn.style.display = '';
@@ -1168,6 +1170,7 @@ function resetScannerUI() {
 async function startQRScanner() {
   const videoEl     = document.getElementById('qr-video');
   const viewfinder  = document.getElementById('scanner-viewfinder');
+  const laserBar    = document.getElementById('scanner-laser-bar');
   const placeholder = document.getElementById('scanner-placeholder');
   const startBtn    = document.getElementById('scan-qr-btn');
   const captureBtn  = document.getElementById('capture-qr-btn');
@@ -1180,6 +1183,7 @@ async function startQRScanner() {
   if (stopBtn)     stopBtn.style.display = '';
   if (placeholder) placeholder.style.display = 'none';
   if (viewfinder)  viewfinder.style.display = 'block';
+  if (laserBar)    laserBar.style.display = 'block';
 
   await QR.startScanner(
     videoEl,

@@ -556,8 +556,8 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; 
 .pairing-request-icon { width: 48px; height: 48px; border-radius: var(--radius-lg); background: rgba(180,101,149,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--accent-secondary); flex-shrink: 0; }
 .pairing-request-name { font-size: 1.0625rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .pairing-request-detail { font-size: 0.6875rem; color: var(--text-muted); font-family: var(--font-mono); }
-.scanner-area { aspect-ratio: 1; max-width: 280px; width: 100%; margin: 0 auto; background: rgba(0,0,0,0.7); border-radius: var(--radius-lg); overflow: hidden; position: relative; border: 2px solid var(--border-accent); display: flex; align-items: center; justify-content: center; min-height: 240px; }
-.scanner-area video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.scanner-area { width: 100%; background: rgba(0,0,0,0.7); border-radius: var(--radius-lg); overflow: hidden; position: relative; border: 2px solid var(--border-accent); min-height: 240px; }
+.scanner-area video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .scanner-viewfinder { position: absolute; inset: 24px; border: 2px solid var(--accent-primary); border-radius: var(--radius-md); pointer-events: none; }
 .scanner-laser { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-primary), transparent); box-shadow: 0 0 8px var(--accent-primary); animation: scan-laser 2s infinite ease-in-out; }
 @keyframes scan-laser { 0% { transform: translateY(0); } 50% { transform: translateY(180px); } 100% { transform: translateY(0); } }
