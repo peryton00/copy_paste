@@ -7,9 +7,12 @@
 
 'use strict';
 
-const CACHE_NAME    = 'lan-clipboard-v1';
+const CACHE_NAME    = 'lan-clipboard-v2';
 const CACHE_ASSETS  = [
+  './',
   './index.html',
+  './manifest.json',
+  './assets/icons/icon.svg',
   './styles/compiled.css',
   './js/app.js',
   './js/utils.js',
@@ -49,24 +52,44 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: cache-first for static assets, network-first otherwise
+// Fetch: network-first with safe cache fallback
 self.addEventListener('fetch', event => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // Never intercept WebRTC/STUN/TURN traffic or external APIs
+  // Never intercept WebRTC or non-http protocols
   if (!url.protocol.startsWith('http')) return;
-  if (url.hostname !== self.location.hostname) return;
 
-  // Network-first strategy
+  // Only handle same-origin requests
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (response && response.ok && response.type === 'basic') {
+        if (response && response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+
+        // If it's a page navigation, fallback to cached index.html
+        if (event.request.mode === 'navigate') {
+          const fallback = await caches.match('./index.html') || await caches.match('./');
+          if (fallback) return fallback;
+        }
+
+        // Always return a valid Response to prevent "Failed to convert value to 'Response'"
+        return new Response('Network error occurred and resource is not cached.', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      })
   );
 });
