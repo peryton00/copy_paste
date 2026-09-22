@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    // Simulate already having completed first run
+    // We'll inject the device into localStorage as a fallback
+    // The app uses IndexedDB primarily; simulate via Storage mock
+  </script>
+</head>
+<body>
+  <script>
+    // Pre-populate IndexedDB to simulate a returning user
+    const dbReq = indexedDB.open('lan-clipboard-db', 1);
+    dbReq.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('settings')) {
+        db.createObjectStore('settings', { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains('devices')) {
+        db.createObjectStore('devices', { keyPath: 'deviceId' });
+      }
+      if (!db.objectStoreNames.contains('history')) {
+        const h = db.createObjectStore('history', { keyPath: 'id' });
+        h.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+    };
+    dbReq.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('settings', 'readwrite');
+      tx.objectStore('settings').put({
+        key: 'app_settings',
+        value: {
+          deviceName: 'Test Laptop',
+          historyEnabled: true,
+          maxClipboardMB: 1,
+          requireSendConfirm: false,
+          autoClearHistory: false,
+          pairingTimeoutMin: 10,
+          localDevice: {
+            deviceId: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+            deviceName: 'Test Laptop',
+            deviceType: 'desktop',
+            createdAt: Date.now()
+          }
+        }
+      });
+      tx.oncomplete = () => {
+        window.location.href = './index.html';
+      };
+    };
+  </script>
+</body>
+</html>

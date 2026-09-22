@@ -1,0 +1,317 @@
+// ============================================================
+// LAN CLIPBOARD — Clipboard UI
+// ============================================================
+
+// ---- Clipboard panel ----
+.clipboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.clipboard-textarea-wrap {
+  position: relative;
+
+  .clipboard-textarea {
+    @extend .textarea-field;
+    min-height: 220px;
+    font-family: $font-mono;
+    font-size: $font-size-sm;
+    line-height: $line-height-loose;
+    resize: vertical;
+    width: 100%;
+    padding-right: $space-10;
+    transition: border-color $transition-fast;
+
+    &:empty:before {
+      content: attr(placeholder);
+      color: $text-muted;
+    }
+  }
+
+  .clipboard-clear-btn {
+    position: absolute;
+    top: $space-3;
+    right: $space-3;
+    @extend .btn-ghost;
+    @extend .btn--icon-only;
+    @extend .btn--sm;
+    color: $text-muted;
+
+    &:hover { color: $state-error; }
+  }
+}
+
+.clipboard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+.clipboard-meta-left {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.clipboard-read-btn {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $accent-primary;
+  background: rgba($color-blush-of-sin, 0.08);
+  border: 1px solid rgba($color-blush-of-sin, 0.18);
+  border-radius: $radius-md;
+  padding: $space-2 $space-4;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-blush-of-sin, 0.14);
+    border-color: rgba($color-blush-of-sin, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .clipboard-read-icon {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+// ---- Device select section ----
+.send-section {
+  background: $bg-surface;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  padding: $space-5;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.send-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.send-section-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semi;
+  color: $text-primary;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.send-controls {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.send-btn {
+  @extend .btn-primary;
+  min-width: 120px;
+  font-size: $font-size-base;
+  padding: $space-3 $space-6;
+}
+
+.send-confirmation {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  background: rgba($color-enchanted-wine, 0.2);
+  border: 1px solid $border-accent;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  animation: fade-in $transition-fast forwards;
+
+  .send-confirmation-device {
+    font-weight: $font-weight-semi;
+    color: $text-primary;
+  }
+
+  .send-confirmation-actions {
+    display: flex;
+    gap: $space-2;
+    margin-left: auto;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ---- History view ----
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-5;
+  flex-wrap: wrap;
+}
+
+.history-search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+
+  .history-search-icon {
+    position: absolute;
+    left: $space-3;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: $text-muted;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .history-search-input {
+    @extend .input-field;
+    padding-left: $space-9;
+  }
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.history-item {
+  background: $bg-surface;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $border-accent;
+  }
+
+  &.history-item--sent {
+    border-left: 3px solid rgba($color-forbidden-rose, 0.4);
+  }
+
+  &.history-item--received {
+    border-left: 3px solid rgba($color-blush-of-sin, 0.4);
+  }
+
+  &.history-item--local {
+    border-left: 3px solid rgba($color-dust-veil, 0.15);
+  }
+}
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.history-direction-badge {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semi;
+  letter-spacing: $letter-spacing-wide;
+  text-transform: uppercase;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+
+  &.badge-sent {
+    background: rgba($color-forbidden-rose, 0.12);
+    color: $accent-secondary;
+  }
+
+  &.badge-received {
+    background: rgba($color-blush-of-sin, 0.1);
+    color: $accent-primary;
+  }
+
+  &.badge-local {
+    background: rgba($color-dust-veil, 0.06);
+    color: $text-muted;
+  }
+
+  .badge-icon {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.history-item-source {
+  font-size: $font-size-xs;
+  color: $text-muted;
+  flex: 1;
+}
+
+.history-item-time {
+  font-size: $font-size-xs;
+  color: $text-muted;
+}
+
+.history-item-preview {
+  font-family: $font-mono;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  line-height: $line-height-base;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.history-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.history-item-size {
+  font-size: $font-size-xs;
+  color: $text-muted;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: $space-2;
+}
+
+// ---- Incoming panel (in main dashboard) ----
+.incoming-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.incoming-panel-label {
+  @extend .label;
+  color: $accent-primary;
+  margin-bottom: $space-1;
+}

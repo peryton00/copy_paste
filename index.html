@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="LAN Clipboard — Securely share clipboard text between trusted devices on your local network.">
+  <meta name="theme-color" content="#180E12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LAN Clipboard">
+
+  <title>LAN Clipboard</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234C042D'/%3E%3Cpath d='M11 8h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z' fill='none' stroke='%23E19FC7' stroke-width='1.5'/%3E%3Cpath d='M13 8V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1' fill='none' stroke='%23E19FC7' stroke-width='1.5'/%3E%3Cpath d='M13 13h6M13 16h4' stroke='%23E4DCCB' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+
+  <!-- QRCode.js (client-side, no backend) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <!-- jsQR (client-side QR scanner) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <!-- Compiled CSS -->
+  <link rel="stylesheet" href="./styles/compiled.css">
+</head>
+<body>
+
+<!-- ============================================================
+     FIRST RUN SCREEN
+============================================================ -->
+<div id="first-run-screen" class="first-run" aria-label="First-run setup">
+  <div class="first-run-card">
+    <div class="first-run-logo">
+      <div class="first-run-icon" aria-hidden="true">
+        <i class="ph-clipboard-text"></i>
+      </div>
+      <h1 class="first-run-title">LAN Clipboard</h1>
+      <p class="first-run-subtitle">Share clipboard text securely between your trusted devices on the same network.</p>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <div class="input-group">
+        <label class="input-label" for="first-run-name">Name this device</label>
+        <input
+          type="text"
+          id="first-run-name"
+          class="input-field"
+          placeholder="e.g. My Laptop, Android Phone"
+          maxlength="48"
+          autocomplete="off"
+          spellcheck="false"
+          aria-required="true"
+        >
+        <span class="input-hint">This name will be shown to other devices during pairing.</span>
+      </div>
+
+      <button id="first-run-continue" class="btn-primary btn--lg w-full" aria-label="Continue to app">
+        <i class="ph-arrow-right btn-icon" aria-hidden="true"></i>
+        Continue
+      </button>
+
+      <div class="privacy-notice">
+        <div class="privacy-notice-icon"><i class="ph-shield-check" aria-hidden="true"></i></div>
+        <div class="privacy-notice-title">Your data stays local</div>
+        <p class="privacy-notice-text">No account required. No cloud storage. Clipboard transfers go directly between your trusted devices.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+============================================================ -->
+<div id="app-shell" class="app-root" hidden aria-label="LAN Clipboard application">
+
+  <!-- ---- Sidebar Overlay (mobile) ---- -->
+  <div id="sidebar-overlay" class="sidebar-overlay" role="presentation" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       SIDEBAR
+  ============================================================ -->
+  <nav id="sidebar" class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="sidebar-brand-icon" aria-hidden="true">
+        <i class="ph-clipboard-text"></i>
+      </div>
+      <div class="sidebar-brand">
+        <span class="brand-name-primary">LAN Clipboard</span>
+        <span class="device-status-small">Local Network</span>
+      </div>
+    </div>
+
+    <div class="sidebar-nav" role="list">
+      <div class="nav-section">
+        <span class="nav-section-label" aria-hidden="true">Clipboard</span>
+        <button class="nav-item nav-item--active" data-view="dashboard" role="listitem" aria-label="Dashboard" aria-current="page">
+          <span class="nav-icon" aria-hidden="true"><i class="ph-squares-four"></i></span>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="history" role="listitem" aria-label="Clipboard history">
+          <span class="nav-icon" aria-hidden="true"><i class="ph-clock-clockwise"></i></span>
+          <span class="nav-label">History</span>
+          <span class="nav-badge" id="history-badge" hidden aria-label="history items">0</span>
+        </button>
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-label" aria-hidden="true">Network</span>
+        <button class="nav-item" data-view="devices" role="listitem" aria-label="Trusted devices">
+          <span class="nav-icon" aria-hidden="true"><i class="ph-devices"></i></span>
+          <span class="nav-label">Devices</span>
+        </button>
+        <button class="nav-item" data-view="pair" role="listitem" aria-label="Pair a new device" data-open-pairing>
+          <span class="nav-icon" aria-hidden="true"><i class="ph-link"></i></span>
+          <span class="nav-label">Pair Device</span>
+        </button>
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-label" aria-hidden="true">Preferences</span>
+        <button class="nav-item" data-view="settings" role="listitem" aria-label="Settings">
+          <span class="nav-icon" aria-hidden="true"><i class="ph-gear"></i></span>
+          <span class="nav-label">Settings</span>
+        </button>
+        <button class="nav-item" data-view="about" role="listitem" aria-label="About and privacy">
+          <span class="nav-icon" aria-hidden="true"><i class="ph-shield-check"></i></span>
+          <span class="nav-label">About &amp; Privacy</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-device-info">
+        <div class="device-avatar" id="sidebar-device-icon" aria-hidden="true">
+          <i class="ph-desktop"></i>
+        </div>
+        <div class="sidebar-footer-text">
+          <div class="device-name-small" id="sidebar-device-name">My Device</div>
+          <div class="device-status-small">This device</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <div class="main-content" id="main-content">
+
+    <!-- ---- Top Bar ---- -->
+    <header class="topbar" role="banner">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+          <i class="ph-list" style="font-size:22px;" aria-hidden="true"></i>
+        </button>
+        <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="network-status-bar" aria-live="polite" aria-label="Network status">
+          <span class="status-dot status-dot--offline" id="network-status-dot" aria-hidden="true"></span>
+          <span id="network-status-text">No connections</span>
+        </div>
+        <span class="chip chip--accent" aria-label="Connected devices count">
+          <i class="ph-devices" aria-hidden="true" style="font-size:13px;"></i>
+          <span id="connected-count">0</span>
+        </span>
+        <button class="btn-ghost btn btn--icon-only" data-view="settings" aria-label="Open settings">
+          <i class="ph-gear" aria-hidden="true" style="font-size:20px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ---- Compatibility warnings ---- -->
+    <div id="compat-warnings" hidden aria-live="assertive" role="alert"></div>
+
+    <!-- ============================================================
+         VIEWS
+    ============================================================ -->
+    <main id="views-container">
+
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <section id="view-dashboard" class="view view--active page-content" aria-label="Dashboard">
+
+        <div id="incoming-panel" hidden>
+          <div class="incoming-panel-label">
+            <i class="ph-arrow-down-left" aria-hidden="true" style="display:inline;margin-right:6px;"></i>Incoming Clipboard
+          </div>
+          <div id="incoming-list"></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Left: Clipboard editor -->
+          <div>
+            <div class="section">
+              <div class="section-header">
+                <span class="section-title">
+                  <i class="ph-clipboard" aria-hidden="true" style="margin-right:6px;"></i>Share Clipboard
+                </span>
+              </div>
+
+              <div class="clipboard-panel">
+                <div class="clipboard-textarea-wrap">
+                  <textarea
+                    id="clipboard-textarea"
+                    class="clipboard-textarea"
+                    placeholder="Click 'Read Clipboard' to load your clipboard, or type text here to send…"
+                    aria-label="Clipboard text content"
+                    rows="8"
+                    spellcheck="false"
+                  ></textarea>
+                  <button class="clipboard-clear-btn" id="clipboard-clear-btn" aria-label="Clear clipboard text" title="Clear">
+                    <i class="ph-x" aria-hidden="true"></i>
+                  </button>
+                </div>
+
+                <div class="clipboard-meta">
+                  <div class="clipboard-meta-left">
+                    <button class="clipboard-read-btn" id="read-clipboard-btn" aria-label="Read text from system clipboard">
+                      <span class="clipboard-read-icon"><i class="ph-clipboard-text" aria-hidden="true"></i></span>
+                      Read Clipboard
+                    </button>
+                  </div>
+                  <span class="char-count" id="char-count" aria-live="polite">0 chars · 0 B</span>
+                </div>
+
+                <!-- Send section -->
+                <div class="send-section" aria-label="Send clipboard to device">
+                  <div class="send-section-header">
+                    <span class="send-section-title">
+                      <i class="ph-paper-plane-tilt" aria-hidden="true"></i>
+                      Select device to send to
+                    </span>
+                    <button class="btn btn-ghost btn--sm" data-view="pair" data-open-pairing aria-label="Add a new device">
+                      <i class="ph-plus btn-icon" aria-hidden="true"></i> Add device
+                    </button>
+                  </div>
+
+                  <div id="dashboard-device-list" class="device-select-list" role="listbox" aria-label="Select target device"></div>
+
+                  <div class="send-controls">
+                    <button class="send-btn" id="send-clipboard-btn" disabled aria-label="Send clipboard content to selected device">
+                      <i class="ph-paper-plane-tilt btn-icon" aria-hidden="true"></i>
+                      <span class="btn-label">Send</span>
+                    </button>
+                  </div>
+
+                  <!-- Send confirmation -->
+                  <div id="send-confirm-panel" class="send-confirmation" hidden aria-label="Confirm send action">
+                    <i class="ph-paper-plane-tilt" aria-hidden="true" style="color:var(--accent-primary);flex-shrink:0;"></i>
+                    <span>Send clipboard to <strong class="send-confirmation-device" id="confirm-device-name"></strong>?</span>
+                    <div class="send-confirmation-actions">
+                      <button class="btn btn-primary btn--sm" id="confirm-send-yes" aria-label="Confirm send">Send</button>
+                      <button class="btn btn-ghost btn--sm" id="confirm-send-no" aria-label="Cancel send">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Status sidebar -->
+          <div>
+            <div class="section">
+              <div class="section-header">
+                <span class="section-title">
+                  <i class="ph-wifi" aria-hidden="true" style="margin-right:6px;"></i>Connection
+                </span>
+              </div>
+              <div class="card">
+                <div class="flex items-center gap-3 mb-4">
+                  <span class="status-dot status-dot--offline" id="dash-status-dot" aria-hidden="true"></span>
+                  <div>
+                    <div style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);">Local Network</div>
+                    <div style="font-size:0.6875rem;color:var(--text-muted);">
+                      Clipboard data stays on your network
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:0.6875rem;color:var(--text-muted);line-height:1.8;padding:0.75rem;background:rgba(0,0,0,0.15);border-radius:var(--radius-md);">
+                  <i class="ph-info" aria-hidden="true" style="color:var(--accent-primary);margin-right:4px;"></i>
+                  Pairing information is exchanged locally between devices. Clipboard data is sent directly between trusted devices via WebRTC.
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-header">
+                <span class="section-title">
+                  <i class="ph-devices" aria-hidden="true" style="margin-right:6px;"></i>Paired Devices
+                </span>
+                <button class="btn btn-ghost btn--sm" data-view="devices" aria-label="View all devices">
+                  View all
+                </button>
+              </div>
+              <div class="card" style="padding:0.75rem;">
+                <div id="dash-devices-summary" style="font-size:0.8125rem;color:var(--text-muted);padding:0.5rem;">Loading…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== DEVICES VIEW ===== -->
+      <section id="view-devices" class="view page-content" aria-label="Trusted devices">
+        <div class="page-header">
+          <h2 class="page-title">Trusted Devices</h2>
+          <p class="page-subtitle">Devices you have paired and trust to exchange clipboard content.</p>
+        </div>
+
+        <div class="flex items-center gap-3 mb-6">
+          <button class="btn-primary btn" data-view="pair" data-open-pairing aria-label="Pair a new device">
+            <i class="ph-link btn-icon" aria-hidden="true"></i>
+            Pair New Device
+          </button>
+        </div>
+
+        <div id="devices-list" aria-live="polite" aria-label="Device list"></div>
+      </section>
+
+      <!-- ===== HISTORY VIEW ===== -->
+      <section id="view-history" class="view page-content" aria-label="Clipboard history">
+        <div class="page-header">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="page-title">Clipboard History</h2>
+              <p class="page-subtitle">Local history of clipboard items sent, received, and read. <span id="history-count" style="color:var(--accent-secondary);"></span></p>
+            </div>
+            <button class="btn btn-danger btn--sm" id="clear-history-btn" aria-label="Clear all history">
+              <i class="ph-trash btn-icon" aria-hidden="true"></i> Clear All
+            </button>
+          </div>
+        </div>
+
+        <div class="history-toolbar">
+          <div class="history-search" role="search">
+            <span class="history-search-icon" aria-hidden="true"><i class="ph-magnifying-glass"></i></span>
+            <input
+              type="search"
+              id="history-search"
+              class="history-search-input"
+              placeholder="Search history…"
+              aria-label="Search clipboard history"
+            >
+          </div>
+        </div>
+
+        <div id="history-list" class="history-list" aria-live="polite" aria-label="History items"></div>
+      </section>
+
+      <!-- ===== PAIR DEVICE VIEW (redirects to modal) ===== -->
+      <section id="view-pair" class="view page-content" aria-label="Pair device">
+        <div class="page-header">
+          <h2 class="page-title">Pair Device</h2>
+          <p class="page-subtitle">Connect another device on your local network.</p>
+        </div>
+        <div class="flex flex-col gap-6" style="max-width:560px;">
+          <div class="card card--accent">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Generate pairing code</div>
+                <div class="card-subtitle">Show a QR code or pairing code to another device.</div>
+              </div>
+              <i class="ph-qr-code" aria-hidden="true" style="font-size:24px;color:var(--accent-secondary);"></i>
+            </div>
+            <button class="btn-primary btn" data-open-pairing aria-label="Start pairing — generate code">
+              <i class="ph-link btn-icon" aria-hidden="true"></i>
+              Generate Pairing Code
+            </button>
+          </div>
+
+          <div class="divider">or</div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Enter a code from another device</div>
+                <div class="card-subtitle">Scan their QR code or paste their connection data.</div>
+              </div>
+              <i class="ph-scan" aria-hidden="true" style="font-size:24px;color:var(--accent-secondary);"></i>
+            </div>
+            <button class="btn-secondary btn" id="switch-to-enter-standalone" aria-label="Enter pairing code from another device">
+              <i class="ph-keyboard btn-icon" aria-hidden="true"></i>
+              Enter Connection Data
+            </button>
+          </div>
+
+          <div class="privacy-notice">
+            <div class="privacy-notice-icon"><i class="ph-lock" aria-hidden="true"></i></div>
+            <div class="privacy-notice-title">How pairing works</div>
+            <p class="privacy-notice-text">
+              Connection information is exchanged manually between devices using a QR code or copy/paste. No clipboard content is shared during pairing. After pairing, data travels directly between your devices.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SETTINGS VIEW ===== -->
+      <section id="view-settings" class="view page-content" aria-label="Settings">
+        <div class="page-header">
+          <h2 class="page-title">Settings</h2>
+          <p class="page-subtitle">Configure your device and preferences.</p>
+        </div>
+
+        <div style="max-width:600px;">
+
+          <!-- Device identity -->
+          <div class="settings-section">
+            <span class="settings-section-title">Device Identity</span>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Device Name</div>
+                <div class="settings-row-hint">Shown to other devices during pairing and transfers.</div>
+              </div>
+              <div class="settings-row-control" style="display:flex;gap:0.5rem;">
+                <input type="text" id="settings-device-name" class="input-field" style="min-width:180px;" maxlength="48" aria-label="Device name" autocomplete="off">
+                <button class="btn-secondary btn btn--sm" id="settings-save-name-btn" aria-label="Save device name">
+                  <i class="ph-floppy-disk btn-icon" aria-hidden="true"></i> Save
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Device ID</div>
+                <div class="settings-row-hint">Cryptographically generated. Unique to this installation.</div>
+              </div>
+              <div class="settings-row-control">
+                <code id="settings-device-id" class="text-mono" style="font-size:0.65rem;color:var(--text-muted);word-break:break-all;max-width:200px;display:block;"></code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clipboard -->
+          <div class="settings-section">
+            <span class="settings-section-title">Clipboard</span>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Save History</div>
+                <div class="settings-row-hint">Store clipboard items locally in IndexedDB.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle" aria-label="Toggle clipboard history">
+                  <input type="checkbox" id="setting-history-enabled" checked>
+                  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Max Clipboard Size</div>
+                <div class="settings-row-hint">Maximum size of clipboard content that can be sent.</div>
+              </div>
+              <div class="settings-row-control" style="min-width:160px;">
+                <div class="range-group">
+                  <div class="range-header">
+                    <span class="range-label"></span>
+                    <span class="range-value" id="setting-max-mb-value">1 MB</span>
+                  </div>
+                  <input type="range" id="setting-max-mb" min="0.1" max="10" step="0.1" value="1" aria-label="Maximum clipboard size in megabytes">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Require Send Confirmation</div>
+                <div class="settings-row-hint">Show a confirmation dialog before each send.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle" aria-label="Toggle send confirmation">
+                  <input type="checkbox" id="setting-require-confirm">
+                  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Auto-clear History</div>
+                <div class="settings-row-hint">Automatically remove old history items.</div>
+              </div>
+              <div class="settings-row-control">
+                <label class="toggle" aria-label="Toggle auto-clear history">
+                  <input type="checkbox" id="setting-auto-clear">
+                  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">History Items</div>
+                <div class="settings-row-hint">Number of items currently stored.</div>
+              </div>
+              <div class="settings-row-control">
+                <span id="settings-history-count" style="font-size:0.8125rem;color:var(--text-muted);">0 items</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pairing -->
+          <div class="settings-section">
+            <span class="settings-section-title">Pairing</span>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Pairing Timeout</div>
+                <div class="settings-row-hint">Pairing codes expire after 10 minutes.</div>
+              </div>
+              <div class="settings-row-control">
+                <span style="font-size:0.8125rem;color:var(--text-muted);">10 minutes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data management -->
+          <div class="settings-section">
+            <span class="settings-section-title">Data</span>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Clear Clipboard History</div>
+                <div class="settings-row-hint">Remove all stored history from this device.</div>
+              </div>
+              <div class="settings-row-control">
+                <button class="btn btn-danger btn--sm" id="settings-clear-history-btn" aria-label="Clear all clipboard history">
+                  <i class="ph-trash btn-icon" aria-hidden="true"></i> Clear History
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Clear All Local Data</div>
+                <div class="settings-row-hint">Reset everything: device identity, trusted devices, history, settings.</div>
+              </div>
+              <div class="settings-row-control">
+                <button class="btn btn-danger btn--sm" id="settings-clear-all-btn" aria-label="Clear all local data and reset app">
+                  <i class="ph-warning btn-icon" aria-hidden="true"></i> Reset App
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <div class="settings-row-label">Browser Compatibility</div>
+                <div class="settings-row-hint">Check which APIs are available in your browser.</div>
+              </div>
+              <div class="settings-row-control">
+                <button class="btn btn-secondary btn--sm" id="settings-compat-btn" aria-label="Check browser compatibility">
+                  <i class="ph-info btn-icon" aria-hidden="true"></i> Check
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ABOUT VIEW ===== -->
+      <section id="view-about" class="view page-content" aria-label="About and privacy">
+        <div class="page-header">
+          <h2 class="page-title">About &amp; Privacy</h2>
+        </div>
+
+        <div style="max-width:600px;" class="flex flex-col gap-6">
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title" style="font-family:var(--font-serif);font-size:1.25rem;font-weight:400;">LAN Clipboard</div>
+                <div class="card-subtitle">Version 1.0.0 — Client-side only</div>
+              </div>
+              <i class="ph-clipboard-text" aria-hidden="true" style="font-size:28px;color:var(--accent-secondary);"></i>
+            </div>
+            <p class="card-body">
+              A privacy-focused application for sharing text between trusted devices on your local network. No cloud required. No account. No tracking.
+            </p>
+          </div>
+
+          <div class="privacy-notice">
+            <div class="privacy-notice-icon"><i class="ph-shield-check" aria-hidden="true"></i></div>
+            <div class="privacy-notice-title">Your clipboard data is stored locally on this device.</div>
+            <p class="privacy-notice-text">
+              Clipboard history is stored in your browser's IndexedDB — not on any server.
+              Clipboard transfers are sent directly between trusted devices using WebRTC DataChannels.
+              No clipboard content is sent to an external server.
+            </p>
+          </div>
+
+          <div class="privacy-notice">
+            <div class="privacy-notice-icon"><i class="ph-wifi" aria-hidden="true"></i></div>
+            <div class="privacy-notice-title">How peer-to-peer connections work</div>
+            <p class="privacy-notice-text">
+              LAN Clipboard uses WebRTC to create a direct, encrypted connection between devices. Pairing information (connection setup) is exchanged manually via QR code or copy/paste — it never passes through a cloud server. After pairing, clipboard content travels directly between your devices.
+            </p>
+          </div>
+
+          <div class="card card--elevated">
+            <div class="card-title" style="margin-bottom:0.75rem;">Browser Limitations</div>
+            <p class="card-body" style="margin-bottom:0.75rem;">
+              Due to browser security restrictions:
+            </p>
+            <ul style="list-style:disc;padding-left:1.25rem;font-size:0.8125rem;color:var(--text-secondary);line-height:1.8;">
+              <li>Clipboard access requires a secure context (HTTPS or localhost).</li>
+              <li>Automatic clipboard monitoring is not possible without user action.</li>
+              <li>Camera access for QR scanning requires your permission.</li>
+              <li>WebRTC requires the browser to support RTCPeerConnection.</li>
+            </ul>
+          </div>
+
+          <div class="card card--elevated">
+            <div class="card-title" style="margin-bottom:0.75rem;">Technology</div>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">Peer communication</span>
+                <span class="chip">WebRTC DataChannel</span>
+              </div>
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">Local storage</span>
+                <span class="chip">IndexedDB</span>
+              </div>
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">Security</span>
+                <span class="chip">Web Crypto API</span>
+              </div>
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">QR generation</span>
+                <span class="chip">qrcodejs (client-side)</span>
+              </div>
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">QR scanning</span>
+                <span class="chip">jsQR (client-side)</span>
+              </div>
+              <div class="flex items-center justify-between" style="font-size:0.8125rem;">
+                <span style="color:var(--text-secondary);">Icons</span>
+                <span class="chip">Phosphor Icons</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main><!-- /views-container -->
+
+    <!-- ---- Mobile Bottom Nav ---- -->
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <div class="mobile-nav-items">
+        <button class="mobile-nav-item mobile-nav-item--active" data-view="dashboard" aria-label="Dashboard">
+          <span class="mobile-nav-icon"><i class="ph-squares-four" aria-hidden="true"></i></span>
+          <span>Home</span>
+        </button>
+        <button class="mobile-nav-item" data-view="devices" aria-label="Devices">
+          <span class="mobile-nav-icon"><i class="ph-devices" aria-hidden="true"></i></span>
+          <span>Devices</span>
+        </button>
+        <button class="mobile-nav-item" data-view="pair" data-open-pairing aria-label="Pair device">
+          <span class="mobile-nav-icon"><i class="ph-link" aria-hidden="true"></i></span>
+          <span>Pair</span>
+        </button>
+        <button class="mobile-nav-item" data-view="history" aria-label="History">
+          <span class="mobile-nav-icon"><i class="ph-clock-clockwise" aria-hidden="true"></i></span>
+          <span>History</span>
+        </button>
+        <button class="mobile-nav-item" data-view="settings" aria-label="Settings">
+          <span class="mobile-nav-icon"><i class="ph-gear" aria-hidden="true"></i></span>
+          <span>Settings</span>
+        </button>
+      </div>
+    </nav>
+
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- ============================================================
+     TOAST CONTAINER
+============================================================ -->
+<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false" role="status"></div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+
+<!-- ===== PAIRING MODAL (Initiator: Generate code) ===== -->
+<div id="pairing-modal" class="modal-backdrop" aria-modal="true" aria-labelledby="pairing-modal-title" role="dialog" aria-hidden="true">
+  <div class="modal modal--wide">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="pairing-modal-title">Pair New Device</h2>
+        <p class="modal-subtitle">Share the code or QR with the other device on your local network.</p>
+      </div>
+      <button class="modal-close" id="pairing-cancel-btn" aria-label="Close pairing">
+        <i class="ph-x" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Generating spinner -->
+      <div id="pairing-generating" class="flex items-center justify-center" style="min-height:200px;gap:1rem;flex-direction:column;">
+        <div class="spinner--lg spinner"></div>
+        <p style="font-size:0.8125rem;color:var(--text-muted);">Generating secure pairing data…</p>
+      </div>
+
+      <!-- Pairing content -->
+      <div id="pairing-content" hidden>
+
+        <!-- Security note -->
+        <div class="banner banner--info" style="margin-bottom:1rem;">
+          <span class="banner-icon"><i class="ph-info" aria-hidden="true"></i></span>
+          <span class="banner-text">Pairing codes expire in <strong id="pairing-timer">10:00</strong>. They are only used for setup — clipboard data travels directly between devices.</span>
+        </div>
+
+        <!-- Tab selector: QR / Code -->
+        <div class="pair-flow-tabs" role="tablist">
+          <button class="pair-flow-tab pair-flow-tab--active" data-tab="qr" role="tab" aria-selected="true" aria-controls="pair-panel-qr">
+            <i class="ph-qr-code" aria-hidden="true"></i> QR Code
+          </button>
+          <button class="pair-flow-tab" data-tab="code" role="tab" aria-selected="false" aria-controls="pair-panel-code">
+            <i class="ph-keyboard" aria-hidden="true"></i> Pairing Code
+          </button>
+        </div>
+
+        <!-- QR Panel -->
+        <div id="pair-panel-qr" class="pair-panel pair-panel--active" role="tabpanel">
+          <div id="qr-container" class="qr-container" aria-label="Pairing QR code"></div>
+          <p class="pair-instructions">Scan this QR code with the other device's LAN Clipboard app. Then paste the response here.</p>
+          <div class="flex items-center gap-3 justify-center">
+            <button class="btn btn-secondary btn--sm" id="copy-offer-packet-btn" aria-label="Copy pairing data to clipboard">
+              <i class="ph-copy btn-icon" aria-hidden="true"></i> Copy pairing data
+            </button>
+          </div>
+        </div>
+
+        <!-- Code Panel -->
+        <div id="pair-panel-code" class="pair-panel" role="tabpanel">
+          <div class="pairing-code-display">
+            <div class="pairing-code-value" id="pairing-code-display" aria-label="Pairing code" aria-live="polite">----·----</div>
+            <div class="pairing-code-expiry">
+              <i class="ph-clock" aria-hidden="true"></i>
+              Expires in <span class="pairing-timer-copy" id="pairing-timer-2">10:00</span>
+            </div>
+          </div>
+          <p class="pair-instructions">Enter this code on the other device, then paste the response here.</p>
+          <div class="flex items-center gap-3 justify-center">
+            <button class="btn btn-secondary btn--sm" id="copy-pairing-code-btn" aria-label="Copy pairing code to clipboard">
+              <i class="ph-copy btn-icon" aria-hidden="true"></i> Copy Code
+            </button>
+            <button class="btn btn-secondary btn--sm" id="copy-offer-packet-btn-2" aria-label="Copy full pairing data">
+              <i class="ph-clipboard btn-icon" aria-hidden="true"></i> Copy full data
+            </button>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider" style="margin:1.25rem 0;">paste response from other device</div>
+
+        <!-- Response paste area (initiator waits for responder's answer) -->
+        <div class="connection-info-box">
+          <label class="connection-info-label" for="response-paste-input">Response from other device</label>
+          <textarea
+            id="response-paste-input"
+            class="packet-entry-area"
+            placeholder="Paste the response data from the other device here…"
+            rows="4"
+            aria-label="Paste connection response from other device"
+            spellcheck="false"
+          ></textarea>
+        </div>
+
+        <div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.75rem;align-items:center;">
+          <button class="btn btn-ghost" id="pairing-cancel-footer-btn" aria-label="Cancel pairing">
+            <i class="ph-x btn-icon" aria-hidden="true"></i> Cancel
+          </button>
+          <button class="btn btn-primary" id="apply-response-btn" aria-label="Apply response and complete pairing">
+            <i class="ph-check btn-icon" aria-hidden="true"></i>
+            Complete Pairing
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ENTER CODE MODAL (Responder: Scan / Paste offer) ===== -->
+<div id="enter-code-modal" class="modal-backdrop" aria-modal="true" aria-labelledby="enter-code-title" role="dialog" aria-hidden="true">
+  <div class="modal modal--wide">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="enter-code-title">Connect to Device</h2>
+        <p class="modal-subtitle">Scan the QR code or paste the connection data from the other device.</p>
+      </div>
+      <button class="modal-close" id="enter-code-close-btn" aria-label="Close">
+        <i class="ph-x" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Scan / Paste sections -->
+      <div id="enter-code-sections">
+
+        <div class="pair-flow-tabs" role="tablist" style="margin-bottom:1rem;">
+          <button class="pair-flow-tab pair-flow-tab--active" id="tab-scan" role="tab">
+            <i class="ph-scan" aria-hidden="true"></i> Scan QR
+          </button>
+          <button class="pair-flow-tab" id="tab-paste" role="tab">
+            <i class="ph-clipboard" aria-hidden="true"></i> Paste Data
+          </button>
+        </div>
+
+        <!-- Scan panel -->
+        <div id="scan-panel" class="pair-panel pair-panel--active">
+          <div class="scanner-area" aria-label="QR code scanner">
+            <div id="scanner-video-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+              <div style="text-align:center;padding:1rem;">
+                <i class="ph-camera" aria-hidden="true" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:0.75rem;"></i>
+                <p style="font-size:0.8125rem;color:var(--text-muted);">Camera preview will appear here</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 justify-center mt-4">
+            <button class="btn-primary btn" id="scan-qr-btn" aria-label="Start camera to scan QR code">
+              <i class="ph-camera btn-icon" aria-hidden="true"></i> Start Camera
+            </button>
+            <button class="btn btn-ghost" id="stop-scan-btn" hidden aria-label="Stop camera scanner">
+              <i class="ph-stop btn-icon" aria-hidden="true"></i> Stop
+            </button>
+          </div>
+          <p class="pair-instructions">Point the camera at the QR code displayed on the other device.</p>
+          <div style="text-align:center;margin-top:1rem;">
+            <button class="btn btn-ghost btn--sm" id="scan-cancel-footer-btn" aria-label="Cancel scanner">
+              <i class="ph-x btn-icon" aria-hidden="true"></i> Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- Paste panel -->
+        <div id="paste-panel" class="pair-panel">
+          <div class="connection-info-box">
+            <label class="connection-info-label" for="paste-packet-input">Connection data from other device</label>
+            <textarea
+              id="paste-packet-input"
+              class="packet-entry-area"
+              placeholder="Paste the connection data copied from the other device here…"
+              rows="5"
+              aria-label="Paste connection data"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem;">
+            <button class="btn btn-ghost" id="enter-code-cancel-footer-btn" aria-label="Cancel">
+              <i class="ph-x btn-icon" aria-hidden="true"></i> Cancel
+            </button>
+            <button class="btn btn-primary" id="paste-packet-submit-btn" aria-label="Submit pasted connection data">
+              <i class="ph-check btn-icon" aria-hidden="true"></i> Connect
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Scanner section (when active) -->
+      <div id="scanner-section" hidden></div>
+
+      <!-- Result: response to send back -->
+      <div id="responder-result" hidden>
+        <div class="divider">share this response with the other device</div>
+        <div class="connection-info-box">
+          <span class="connection-info-label">Response data (send to other device)</span>
+          <div class="connection-info-value" id="response-packet-display" style="max-height:80px;overflow-y:auto;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem;">
+          <button class="btn btn-ghost" id="responder-done-btn" aria-label="Done">
+            <i class="ph-check btn-icon" aria-hidden="true"></i> Done / Close
+          </button>
+          <button class="btn btn-primary" id="copy-response-btn" aria-label="Copy response data to clipboard">
+            <i class="ph-copy btn-icon" aria-hidden="true"></i> Copy Response
+          </button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;line-height:1.6;">
+          <i class="ph-info" aria-hidden="true" style="color:var(--accent-primary);margin-right:4px;"></i>
+          Copy this response and paste it into the "Paste response" field on the other device to complete pairing.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAIRING REQUEST MODAL ===== -->
+<div id="pairing-request-modal" class="modal-backdrop" aria-modal="true" aria-labelledby="pairing-req-title" role="dialog" aria-hidden="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="pairing-req-title">Pairing Request</h2>
+        <p class="modal-subtitle">A device wants to connect to your LAN Clipboard.</p>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="pairing-request-device">
+        <div class="pairing-request-icon">
+          <i class="ph-devices" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="pairing-request-name" id="pending-request-name">Unknown Device</div>
+          <div class="pairing-request-detail" id="pending-request-id"></div>
+        </div>
+      </div>
+
+      <div style="font-size:0.8125rem;color:var(--text-secondary);line-height:1.8;margin-bottom:1rem;">
+        <i class="ph-shield-check" aria-hidden="true" style="color:var(--accent-secondary);margin-right:6px;"></i>
+        Only approve devices you trust. Once paired, this device can send clipboard content to you.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="pairing-reject-btn" aria-label="Reject pairing request">
+        <i class="ph-x btn-icon" aria-hidden="true"></i> Reject
+      </button>
+      <button class="btn btn-primary" id="pairing-approve-btn" aria-label="Approve pairing request">
+        <i class="ph-check btn-icon" aria-hidden="true"></i> Approve &amp; Connect
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COMPATIBILITY MODAL ===== -->
+<div id="compat-modal" class="modal-backdrop" aria-modal="true" aria-labelledby="compat-title" role="dialog" aria-hidden="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="compat-title">Browser Compatibility</h2>
+        <p class="modal-subtitle">Features available in your current browser.</p>
+      </div>
+      <button class="modal-close" id="compat-modal-close" aria-label="Close compatibility check">
+        <i class="ph-x" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="compat-list" class="compat-list" aria-label="Compatibility results" aria-live="polite"></div>
+      <div class="banner banner--info" style="margin-top:1rem;margin-bottom:0;">
+        <span class="banner-icon"><i class="ph-info" aria-hidden="true"></i></span>
+        <span class="banner-text">For full functionality, use a modern browser over HTTPS or on localhost.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+============================================================ -->
+<script>
+  // Setup enter-code modal tabs (vanilla, no module needed)
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabScan  = document.getElementById('tab-scan');
+    const tabPaste = document.getElementById('tab-paste');
+    const scanPanel  = document.getElementById('scan-panel');
+    const pastePanel = document.getElementById('paste-panel');
+
+    if (tabScan && tabPaste) {
+      tabScan.addEventListener('click', () => {
+        tabScan.classList.add('pair-flow-tab--active');
+        tabPaste.classList.remove('pair-flow-tab--active');
+        scanPanel.classList.add('pair-panel--active');
+        pastePanel.classList.remove('pair-panel--active');
+      });
+      tabPaste.addEventListener('click', () => {
+        tabPaste.classList.add('pair-flow-tab--active');
+        tabScan.classList.remove('pair-flow-tab--active');
+        pastePanel.classList.add('pair-panel--active');
+        scanPanel.classList.remove('pair-panel--active');
+      });
+    }
+
+    // Note: "switch-to-enter-standalone" is handled by app.js module
+
+    // Pairing code timer sync
+    const t1 = document.getElementById('pairing-timer');
+    const t2 = document.getElementById('pairing-timer-2');
+    if (t1 && t2) {
+      const observer = new MutationObserver(() => { t2.textContent = t1.textContent; });
+      observer.observe(t1, { childList: true, characterData: true, subtree: true });
+    }
+
+    // "copy-offer-packet-btn-2" — same as primary
+    document.getElementById('copy-offer-packet-btn-2')?.addEventListener('click', () => {
+      document.getElementById('copy-offer-packet-btn')?.click();
+    });
+
+    // Dashboard device summary
+    function updateDashDeviceSummary() {
+      const el = document.getElementById('dash-devices-summary');
+      const list = document.getElementById('dashboard-device-list');
+      if (!el) return;
+      const count = list?.querySelectorAll('.device-select-item').length || 0;
+      el.textContent = count === 0 ? 'No devices paired yet.' : `${count} device${count !== 1 ? 's' : ''} paired`;
+    }
+    // Poll for updates
+    setInterval(updateDashDeviceSummary, 2000);
+
+    // Note: clear-history-btn is handled by app.js module
+  });
+</script>
+
+<script type="module" src="./js/app.js"></script>
+
+
+
+</body>
+</html>

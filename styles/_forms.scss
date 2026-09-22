@@ -1,0 +1,134 @@
+// ============================================================
+// LAN CLIPBOARD — Forms
+// ============================================================
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.form-row {
+  display: flex;
+  gap: $space-4;
+  align-items: flex-start;
+
+  > * { flex: 1; }
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+  }
+}
+
+.field-validation {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-2;
+  font-size: $font-size-xs;
+  color: $text-muted;
+
+  &.field-validation--error {
+    color: $state-error;
+  }
+
+  &.field-validation--success {
+    color: $accent-secondary;
+  }
+}
+
+// Pairing code entry
+.code-entry {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  justify-content: center;
+
+  .code-entry-input {
+    @extend .input-field;
+    text-align: center;
+    font-family: $font-mono;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    max-width: 180px;
+    padding: $space-4;
+  }
+
+  .code-entry-dash {
+    font-size: $font-size-lg;
+    color: $text-muted;
+    font-weight: $font-weight-light;
+  }
+}
+
+// Offer/Answer packet entry
+.packet-entry-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.packet-entry-area {
+  @extend .textarea-field;
+  min-height: 120px;
+  font-size: $font-size-xs;
+}
+
+// Range input
+.range-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  .range-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .range-label {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      color: $text-secondary;
+    }
+
+    .range-value {
+      font-family: $font-mono;
+      font-size: $font-size-sm;
+      color: $accent-primary;
+    }
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba($color-dust-veil, 0.12);
+    border-radius: $radius-full;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: $radius-full;
+      background: $accent-secondary;
+      cursor: pointer;
+      transition: transform $transition-fast;
+
+      &:hover { transform: scale(1.2); }
+    }
+
+    &::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: $radius-full;
+      background: $accent-secondary;
+      border: none;
+      cursor: pointer;
+    }
+  }
+}

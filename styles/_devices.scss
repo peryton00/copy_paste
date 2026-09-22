@@ -1,0 +1,319 @@
+// ============================================================
+// LAN CLIPBOARD — Device Cards
+// ============================================================
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-4;
+}
+
+.device-card {
+  background: $bg-surface;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  padding: $space-5;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  transition: border-color $transition-fast;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: transparent;
+    transition: background $transition-base;
+  }
+
+  &.device-card--connected {
+    border-color: rgba($color-forbidden-rose, 0.2);
+
+    &::before {
+      background: linear-gradient(90deg, $color-forbidden-rose, transparent);
+    }
+  }
+
+  &.device-card--connecting,
+  &.device-card--pairing {
+    border-color: rgba($color-blush-of-sin, 0.2);
+
+    &::before {
+      background: linear-gradient(90deg, $color-blush-of-sin, transparent);
+    }
+  }
+
+  &.device-card--error {
+    border-color: rgba($color-crimson-curse, 0.25);
+
+    &::before {
+      background: linear-gradient(90deg, $color-crimson-curse, transparent);
+    }
+  }
+}
+
+.device-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+}
+
+.device-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  background: rgba($color-forbidden-rose, 0.1);
+  border: 1px solid rgba($color-forbidden-rose, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: $accent-secondary;
+  flex-shrink: 0;
+}
+
+.device-card-meta {
+  flex: 1;
+  min-width: 0;
+
+  .device-card-name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-semi;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 3px;
+  }
+
+  .device-card-id {
+    font-family: $font-mono;
+    font-size: $font-size-xs;
+    color: $text-muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.device-card-status-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.device-card-status-label {
+  font-size: $font-size-xs;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: $letter-spacing-wide;
+}
+
+.device-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  .device-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: $font-size-xs;
+
+    .device-info-label {
+      color: $text-muted;
+    }
+
+    .device-info-value {
+      color: $text-secondary;
+      font-family: $font-mono;
+    }
+  }
+}
+
+.device-card-actions {
+  display: flex;
+  gap: $space-2;
+  flex-wrap: wrap;
+  border-top: 1px solid $border-color;
+  padding-top: $space-3;
+}
+
+// ---- Pairing flow card (inside modal) ----
+.pair-flow-step {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.pair-flow-tabs {
+  display: flex;
+  gap: $space-2;
+  padding: 3px;
+  background: rgba(0,0,0,0.2);
+  border-radius: $radius-lg;
+
+  .pair-flow-tab {
+    flex: 1;
+    padding: $space-2 $space-4;
+    text-align: center;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $text-muted;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $transition-fast;
+    border: none;
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
+
+    &.pair-flow-tab--active {
+      background: $bg-surface;
+      color: $text-primary;
+      border: 1px solid $border-accent;
+    }
+
+    &:hover:not(.pair-flow-tab--active) {
+      color: $text-secondary;
+    }
+  }
+}
+
+.pair-panel {
+  display: none;
+
+  &.pair-panel--active {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+  }
+}
+
+.pair-instructions {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  line-height: $line-height-loose;
+  text-align: center;
+}
+
+// ---- Request modal ----
+.pairing-request-device {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-5;
+  background: rgba($color-enchanted-wine, 0.2);
+  border: 1px solid $border-accent;
+  border-radius: $radius-lg;
+  margin-bottom: $space-5;
+
+  .pairing-request-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    background: rgba($color-forbidden-rose, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: $accent-secondary;
+    flex-shrink: 0;
+  }
+
+  .pairing-request-info {
+    flex: 1;
+
+    .pairing-request-name {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semi;
+      color: $text-primary;
+      margin-bottom: 4px;
+    }
+
+    .pairing-request-detail {
+      font-size: $font-size-xs;
+      color: $text-muted;
+      font-family: $font-mono;
+    }
+  }
+}
+
+// ---- Connection packet input area ----
+.packet-input-area {
+  background: rgba(0,0,0,0.3);
+  border: 1px dashed $border-accent;
+  border-radius: $radius-lg;
+  padding: $space-6;
+  text-align: center;
+  transition: border-color $transition-fast, background $transition-fast;
+  cursor: pointer;
+
+  &:hover,
+  &.drag-over {
+    border-color: $accent-secondary;
+    background: rgba($color-enchanted-wine, 0.15);
+  }
+
+  .packet-input-icon {
+    font-size: 32px;
+    color: $text-muted;
+    margin-bottom: $space-3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .packet-input-text {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    margin-bottom: $space-2;
+  }
+
+  .packet-input-hint {
+    font-size: $font-size-xs;
+    color: $text-muted;
+  }
+}
+
+// ---- Scanner area ----
+.scanner-area {
+  aspect-ratio: 1;
+  max-width: 280px;
+  margin: 0 auto;
+  background: rgba(0,0,0,0.3);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid $border-accent;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .scanner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    .scanner-frame {
+      width: 160px;
+      height: 160px;
+      border: 2px solid $accent-primary;
+      border-radius: $radius-md;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,0.4);
+    }
+  }
+}

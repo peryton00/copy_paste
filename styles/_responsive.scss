@@ -1,0 +1,126 @@
+// ============================================================
+// LAN CLIPBOARD — Responsive
+// ============================================================
+
+// ---- Tablet ----
+@media (max-width: $bp-lg) {
+  .page-content {
+    padding: $space-6;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .device-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+// ---- Mobile ----
+@media (max-width: $bp-md) {
+  .topbar {
+    padding: 0 $space-4;
+  }
+
+  .page-content {
+    padding: $space-4;
+  }
+
+  .first-run-card {
+    padding: $space-8 $space-5;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding-left: $space-5;
+    padding-right: $space-5;
+  }
+
+  .modal-footer {
+    padding-left: $space-5;
+    padding-right: $space-5;
+    padding-bottom: $space-5;
+  }
+
+  .pairing-code-value {
+    font-size: 2rem;
+  }
+
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-search {
+    min-width: unset;
+  }
+}
+
+// ---- Small mobile ----
+@media (max-width: $bp-xs) {
+  .topbar-title { display: none; }
+
+  .pairing-code-value {
+    font-size: 1.75rem;
+    letter-spacing: 0.15em;
+  }
+
+  .send-controls {
+    flex-direction: column;
+    align-items: stretch;
+
+    .send-btn { width: 100%; }
+  }
+
+  .pair-flow-tab {
+    font-size: $font-size-xs;
+    padding: $space-2;
+  }
+}
+
+// ---- Print ----
+@media print {
+  .sidebar,
+  .mobile-nav,
+  .topbar,
+  .toast-container,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+
+// ---- High contrast ----
+@media (prefers-contrast: high) {
+  .border-color,
+  .card,
+  .input-field,
+  .device-card {
+    border-color: rgba($color-dust-veil, 0.3);
+  }
+}
+
+// ---- Touch target sizing ----
+@media (hover: none) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .nav-item {
+    min-height: 44px;
+  }
+
+  .mobile-nav-item {
+    min-height: 52px;
+    min-width: 52px;
+  }
+}

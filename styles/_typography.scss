@@ -1,0 +1,127 @@
+// ============================================================
+// LAN CLIPBOARD — Typography
+// ============================================================
+
+// Serif headings
+.heading-display {
+  font-family: $font-serif;
+  font-size: $font-size-4xl;
+  font-weight: $font-weight-light;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-tight;
+  color: $text-primary;
+}
+
+.heading-1 {
+  font-family: $font-serif;
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-tight;
+  color: $text-primary;
+}
+
+.heading-2 {
+  font-family: $font-serif;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-snug;
+  color: $text-primary;
+}
+
+.heading-3 {
+  font-family: $font-serif;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-snug;
+}
+
+.heading-4 {
+  font-family: $font-sans;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semi;
+  letter-spacing: $letter-spacing-normal;
+  line-height: $line-height-snug;
+}
+
+.heading-5 {
+  font-family: $font-sans;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semi;
+  letter-spacing: $letter-spacing-wide;
+  text-transform: uppercase;
+}
+
+// Section labels
+.label {
+  font-family: $font-sans;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semi;
+  letter-spacing: $letter-spacing-widest;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+.label-accent {
+  @extend .label;
+  color: $accent-secondary;
+}
+
+// Body text
+.text-sm   { font-size: $font-size-sm; }
+.text-base { font-size: $font-size-base; }
+.text-md   { font-size: $font-size-md; }
+.text-lg   { font-size: $font-size-lg; }
+
+.text-muted    { color: $text-muted; }
+.text-secondary { color: $text-secondary; }
+.text-accent   { color: $text-accent; }
+.text-error    { color: $state-error; }
+
+// Monospace
+.text-mono {
+  font-family: $font-mono;
+  font-size: 0.9em;
+}
+
+// Pairing code
+.pairing-code-text {
+  font-family: $font-mono;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.18em;
+  color: $accent-primary;
+}
+
+// App logo / brand
+.brand-name {
+  font-family: $font-serif;
+  font-weight: $font-weight-light;
+  letter-spacing: $letter-spacing-widest;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.brand-name-primary {
+  @extend .brand-name;
+  font-size: $font-size-lg;
+  color: $text-primary;
+}
+
+.brand-tagline {
+  font-family: $font-sans;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-regular;
+  letter-spacing: $letter-spacing-wider;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+// Truncate
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
